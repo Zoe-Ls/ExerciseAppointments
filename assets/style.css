@@ -312,6 +312,7 @@ b, strong { font-weight: 700; }
 .dot-pending { background: var(--wait-100); border-color: var(--wait-300); }
 .dot-mine { background: var(--mine-100); border-color: var(--mine-300); }
 .dot-past { background: var(--past-100); border-color: var(--past-300); }
+.dot-conflict { background: repeating-linear-gradient(45deg, var(--danger-100) 0 5px, #f7ddd6 5px 10px); border-color: var(--danger-300); }
 
 .venue-info { display: flex; align-items: center; gap: 14px; padding: 16px 20px; flex-wrap: wrap; }
 .venue-icon {
@@ -326,6 +327,7 @@ b, strong { font-weight: 700; }
   background: var(--pine-50); border: 1px solid var(--pine-100); color: var(--pine-700);
 }
 .pill b { font-family: var(--font-din); font-size: 15px; font-weight: 700; }
+.pill-conflict { background: var(--danger-100); border-color: var(--danger-300); color: var(--danger-700); }
 /* ---------- 11. 时段表（签名元素：像场馆电子牌） ---------- */
 .grid-card { overflow: hidden; }
 .grid-wrap { max-height: 60vh; overflow: auto; border-top: 1px solid var(--line); border-radius: 0 0 var(--radius) var(--radius); }
@@ -357,6 +359,10 @@ table.slot-grid { border-collapse: separate; border-spacing: 0; font-size: 12px;
 .cell-pending { background: var(--wait-100); border-color: var(--wait-300); color: var(--wait-700); cursor: not-allowed; }
 .cell-mine { background: var(--mine-100); border-color: var(--mine-300); color: var(--mine-700); font-weight: 600; }
 .cell-past { background: var(--past-100); border-color: var(--past-300); color: var(--past-fg); cursor: not-allowed; }
+.cell-conflict {
+  background: repeating-linear-gradient(45deg, var(--danger-100) 0 5px, #f7ddd6 5px 10px);
+  border-color: var(--danger-300); color: var(--danger-700); cursor: not-allowed;
+}
 
 /* ---------- 12. 弹窗 ---------- */
 .modal-mask {

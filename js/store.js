@@ -146,12 +146,33 @@ const Store = (function () {
       && b.date === date && b.slot === slot && b.status !== 'rejected') || null;
   }
 
+  function venueText(venueTypeId, venueNo) {
+    const t = VENUE_MAP[venueTypeId];
+    return t ? t.name + ' ' + t.prefix + venueNo : String(venueTypeId) + ' ' + venueNo;
+  }
+
+  function findUserSlotBooking(s, userId, date, slot, exceptTeamId) {
+    if (!userId) return null;
+    return s.bookings.find((b) => b.userId === userId && b.date === date
+      && String(b.slot) === String(slot) && b.status !== 'rejected'
+      && (!exceptTeamId || b.teamId !== exceptTeamId)) || null;
+  }
+
+  function slotConflictText(booking) {
+    const slot = TIME_SLOTS.find((x) => x.id === Number(booking.slot));
+    return venueText(booking.venueTypeId, booking.venueNo) + (slot ? ' ' + slot.label : '');
+  }
+
   function slotStatus(venueTypeId, venueNo, date, slot) {
     const s = load();
     const found = findActiveBooking(s, venueTypeId, venueNo, date, slot);
-    if (!found) return { state: 'free', booking: null };
-    if (found.userId === s.session.userId) return { state: 'mine', booking: found };
-    return { state: found.status === 'pending' ? 'pending' : 'taken', booking: found };
+    if (found) {
+      if (found.userId === s.session.userId) return { state: 'mine', booking: found };
+      return { state: found.status === 'pending' ? 'pending' : 'taken', booking: found };
+    }
+    const own = findUserSlotBooking(s, s.session.userId, date, slot);
+    if (own) return { state: 'conflict', booking: own };
+    return { state: 'free', booking: null };
   }
 
   function createBooking(input) {
@@ -172,9 +193,10 @@ const Store = (function () {
     }
     const conflict = findActiveBooking(s, input.venueTypeId, input.venueNo, input.date, input.slot);
     if (conflict) return { ok: false, message: '该时段已被预约，请选择其他时段' };
-    const clash = s.bookings.find((b) => b.userId === user.id && b.date === input.date
-      && b.slot === input.slot && b.status !== 'rejected');
-    if (clash) return { ok: false, message: '你在该时段已有预约，不能重复预约' };
+    const clash = findUserSlotBooking(s, user.id, input.date, input.slot);
+    if (clash) {
+      return { ok: false, message: '你在该时段已预约了其他场馆（' + slotConflictText(clash) + '），需先取消该预约才能预约此处' };
+    }
     const booking = {
       id: uid('b'), userId: user.id, venueTypeId: input.venueTypeId, venueNo: input.venueNo,
       date: input.date, slot: input.slot, mode: input.mode,
@@ -362,6 +384,10 @@ const Store = (function () {
     if (need < 2 || need > type.capacity) {
       return { ok: false, message: '需要人数需在 2 - ' + type.capacity + ' 人之间' };
     }
+    const ownSlot = findUserSlotBooking(s, user.id, input.date, Number(input.slot));
+    if (ownSlot) {
+      return { ok: false, message: '你在该时段已预约了其他场馆（' + slotConflictText(ownSlot) + '），需先取消该预约才能发起组队' };
+    }
     const team = {
       id: uid('t'), userId: user.id, venueTypeId: input.venueTypeId, venueNo: input.venueNo,
       date: input.date, slot: Number(input.slot), need: need, title: title,
@@ -386,17 +412,26 @@ const Store = (function () {
     if (team.members.filter((m) => m.status === 'joined').length >= team.need) {
       return { ok: false, message: '队伍人数已满' };
     }
+    const ownSlot = findUserSlotBooking(s, user.id, team.date, team.slot);
+    if (ownSlot) {
+      return { ok: false, message: '你在该时段已预约了其他场馆（' + slotConflictText(ownSlot) + '），需先取消该预约才能加入队伍' };
+    }
     team.members.push({ userId: user.id, name: user.name, status: 'pending', note: String(note || '').trim() });
     save();
     return { ok: true, message: '入队申请已发送，等待队长同意' };
   }
 
   function reviewTeamMember(teamId, userId, approve) {
-    const team = load().teams.find((t) => t.id === teamId);
+    const s = load();
+    const team = s.teams.find((t) => t.id === teamId);
     if (!team) return { ok: false, message: '队伍不存在' };
     const member = team.members.find((m) => m.userId === userId);
     if (!member) return { ok: false, message: '成员不存在' };
     if (approve) {
+      const ownSlot = findUserSlotBooking(s, userId, team.date, team.slot);
+      if (ownSlot) {
+        return { ok: false, message: '该同学在该时段已预约其他场馆（' + slotConflictText(ownSlot) + '），需其先取消后才能同意入队' };
+      }
       member.status = 'joined';
       if (team.members.filter((m) => m.status === 'joined').length >= team.need) team.status = 'full';
     } else {
@@ -428,6 +463,10 @@ const Store = (function () {
     const s = load();
     const conflict = findActiveBooking(s, team.venueTypeId, team.venueNo, team.date, team.slot);
     if (conflict) return { ok: false, message: '该时段已被预约，请重新组队另选时段' };
+    const ownSlot = findUserSlotBooking(s, team.userId, team.date, team.slot, team.id);
+    if (ownSlot) {
+      return { ok: false, message: '队长在该时段已预约了其他场馆（' + slotConflictText(ownSlot) + '），需先取消该预约才能提交组队预约' };
+    }
     const type = VENUE_MAP[team.venueTypeId];
     const members = memberNames.slice(0, type.capacity);
     while (members.length < type.capacity) members.push('待定成员');

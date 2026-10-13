@@ -172,6 +172,7 @@ function cellHtml(type, venue, slot) {
   if (st.state === 'taken') return '<td><button class="cell cell-taken" disabled title="已被预约：' + title + '">已约</button></td>';
   if (st.state === 'pending') return '<td><button class="cell cell-pending" disabled title="审核中：' + title + '">待审</button></td>';
   if (isPastSlot(ui.date, slot.id)) return '<td><button class="cell cell-past" disabled title="时段已过期：' + title + '">—</button></td>';
+  if (st.state === 'conflict') return '<td><button class="cell cell-conflict" disabled title="' + esc('时段冲突：你已预约 ' + venueLabel(st.booking.venueTypeId, st.booking.venueNo) + '（' + slot.label + '），取消该预约后即可预约此处') + '">冲突</button></td>';
   return '<td><button class="cell cell-free" ' + data + ' title="可预约：' + title + '">可约</button></td>';
 }
 
@@ -182,10 +183,13 @@ function viewBook() {
   const venues = VENUES.filter((v) => v.typeId === type.id);
   let freeCount = 0;
   let takenCount = 0;
+  let conflictCount = 0;
+  const conflictSlots = new Set();
   venues.forEach((v) => {
     TIME_SLOTS.forEach((s) => {
       const st = Store.slotStatus(type.id, v.no, ui.date, s.id);
-      if (st.state !== 'free') takenCount += 1;
+      if (st.state === 'conflict') { conflictCount += 1; conflictSlots.add(s.id); }
+      else if (st.state !== 'free') takenCount += 1;
       else if (!isPastSlot(ui.date, s.id)) freeCount += 1;
     });
   });
@@ -218,11 +222,15 @@ function viewBook() {
     + '<span><i class="dot dot-pending"></i>待审核</span>'
     + '<span><i class="dot dot-taken"></i>已预约</span>'
     + '<span><i class="dot dot-past"></i>已过期</span>'
+    + '<span><i class="dot dot-conflict"></i>时段冲突（你已约其他场馆）</span>'
     + '</div></div></div>'
+    + (conflictCount ? '<div class="banner banner-warn">⏱ ' + dayLabel(ui.date) + ' 你有 <b>' + conflictSlots.size + '</b> 个时段已预约了其他场馆：这些时段的其他场馆暂不能预约或组队，如需改约请先取消对应预约（可到「个人主页 → 我的预约」取消）。</div>' : '')
     + '<div class="card venue-info">'
     + '<span class="venue-icon">' + type.icon + '</span>'
     + '<div><strong>' + esc(type.name) + '</strong><p class="hint">📍 ' + esc(type.location) + ' ｜ 共 ' + type.count + ' 个场地 ｜ ' + esc(type.capacityNote) + ' ｜ 支持：' + type.modes.map((m) => MODE_LABEL[m]).join(' / ') + '</p></div>'
-    + '<div class="summary-pills"><span class="pill">' + dayLabel(ui.date) + '</span><span class="pill">可约 <b>' + freeCount + '</b></span><span class="pill">已约 / 待审 <b>' + takenCount + '</b></span></div>'
+    + '<div class="summary-pills"><span class="pill">' + dayLabel(ui.date) + '</span><span class="pill">可约 <b>' + freeCount + '</b></span><span class="pill">已约 / 待审 <b>' + takenCount + '</b></span>'
+    + (conflictCount ? '<span class="pill pill-conflict">时段冲突 <b>' + conflictCount + '</b></span>' : '')
+    + '</div>'
     + '</div>'
     + '<div class="card grid-card"><div class="grid-wrap"><table class="slot-grid">'
     + '<thead><tr><th>场地</th>' + TIME_SLOTS.map((s) => '<th>' + s.short + '</th>').join('') + '</tr></thead>'
