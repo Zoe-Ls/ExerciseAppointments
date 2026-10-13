@@ -1,0 +1,16 @@
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# 临时与日志文件
+_shot*.html
+*.log
+*.tmp
+
+# 依赖与构建产物（后续接入后端时使用）
+node_modules/
+dist/
+.env
