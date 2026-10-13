@@ -145,7 +145,6 @@ b, strong { font-weight: 700; }
 .textarea { resize: vertical; }
 .form-error { color: var(--danger-700); font-size: 12px; min-height: 18px; margin: 4px 0 10px; }
 .field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0 14px; }
-.member-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
 
 /* ---------- 6. 校徽与头像 ---------- */
 .logo-mark { width: 42px; height: 42px; display: inline-block; flex: none; }
@@ -393,14 +392,6 @@ table.slot-grid { border-collapse: separate; border-spacing: 0; font-size: 12px;
 }
 .modal-summary { display: flex; gap: 13px; align-items: center; padding: 16px 20px; background: var(--pine-50); border-bottom: 1px solid var(--pine-100); }
 .section-hint { font-size: 12px; color: var(--muted); margin-bottom: 11px; }
-.mode-cards { display: grid; gap: 10px; }
-.mode-card {
-  text-align: left; padding: 15px 17px; border: 1px solid var(--line); border-radius: var(--radius-sm);
-  background: #fff; font-family: inherit; cursor: pointer; transition: .16s ease;
-}
-.mode-card:hover { border-color: var(--pine-300); background: var(--pine-50); transform: translateX(3px); }
-.mode-card strong { display: block; font-size: 14px; color: var(--ink); }
-.mode-card span { font-size: 12px; color: var(--muted); }
 
 /* ---------- 13. 交流中心 ---------- */
 .notice-bar { padding: 14px 18px; }
@@ -479,6 +470,8 @@ table.slot-grid { border-collapse: separate; border-spacing: 0; font-size: 12px;
 .table th, .table td { text-align: left; padding: 11px 13px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
 .table th { font-size: 12px; font-weight: 700; color: var(--muted); background: #f7faf5; position: sticky; top: 0; z-index: 1; }
 .table tbody tr:hover { background: #fafdf7; }
+.table tbody tr.is-expired td { color: var(--muted); }
+.table tbody tr.is-expired .badge { background: var(--grey-100); border-color: var(--grey-300); color: var(--grey-700); }
 .table-scroll { overflow: auto; max-height: 62vh; border-radius: 0 0 var(--radius) var(--radius); }
 .table .btn-primary { background: var(--lime-500); color: var(--pine-900); box-shadow: none; }
 .table .btn-primary:hover { background: var(--lime-400); color: var(--pine-900); }
@@ -515,7 +508,6 @@ table.slot-grid { border-collapse: separate; border-spacing: 0; font-size: 12px;
   .auth { padding: 12px; }
   .auth-hero { padding: 24px 20px 28px; }
   .page-head { align-items: flex-start; }
-  .member-grid { grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); }
   .toast-root { left: 14px; right: 14px; bottom: 14px; }
 }
 

@@ -54,15 +54,15 @@ const TIME_SLOTS = Array.from({ length: CLOSE_HOUR - OPEN_HOUR }, (_, i) => {
 });
 
 const VENUE_TYPES = [
-  { id: 'badminton', name: '羽毛球馆', group: '东体育馆', location: '东体育馆 3楼', icon: '🏸', count: 20, capacity: 4, capacityNote: '每片场地限 4 人（双打）', prefix: '羽', modes: ['personal', 'club'] },
-  { id: 'volleyball-old', name: '排球老场', group: '第二运动场', location: '第二运动场', icon: '🏐', count: 8, capacity: 12, capacityNote: '每片场地限 12 人', prefix: '排', modes: ['personal', 'club'] },
-  { id: 'volleyball-new', name: '排球新场', group: '第三运动场', location: '第三运动场', icon: '🏐', count: 6, capacity: 12, capacityNote: '每片场地限 12 人', prefix: '排', modes: ['personal', 'club'] },
-  { id: 'volleyball-indoor', name: '排球室内场', group: '西体育馆', location: '西体育馆', icon: '🏐', count: 1, capacity: 12, capacityNote: '每片场地限 12 人', prefix: '排', modes: ['personal', 'club'] },
-  { id: 'pingpong', name: '乒乓球馆', group: '东体育馆', location: '东体育馆 1楼', icon: '🏓', count: 36, capacity: 4, capacityNote: '每张球台限 4 人', prefix: '乒', modes: ['personal', 'club'] },
-  { id: 'tennis-indoor', name: '室内网球馆', group: '东体育馆', location: '东体育馆 2楼', icon: '🎾', count: 3, capacity: 4, capacityNote: '每片场地限 4 人', prefix: '网', modes: ['personal', 'club'] },
-  { id: 'tennis-outdoor', name: '室外网球场', group: '室外场地', location: '室外网球场', icon: '🎾', count: 4, capacity: 4, capacityNote: '每片场地限 4 人', prefix: '网', modes: ['personal', 'club'] },
-  { id: 'swim-male', name: '游泳馆（男）', group: '东体育馆游泳馆', location: '东体育馆 游泳馆', icon: '🏊', count: 1, capacity: 1, capacityNote: '游泳馆仅支持个人预约（1 人）', prefix: '泳', modes: ['personal'] },
-  { id: 'swim-female', name: '游泳馆（女）', group: '东体育馆游泳馆', location: '东体育馆 游泳馆', icon: '🏊', count: 1, capacity: 1, capacityNote: '游泳馆仅支持个人预约（1 人）', prefix: '泳', modes: ['personal'] },
+  { id: 'badminton', name: '羽毛球馆', group: '东体育馆', location: '东体育馆 3楼', icon: '🏸', count: 20, capacity: 4, prefix: '羽' },
+  { id: 'volleyball-old', name: '排球老场', group: '第二运动场', location: '第二运动场', icon: '🏐', count: 8, capacity: 12, prefix: '排' },
+  { id: 'volleyball-new', name: '排球新场', group: '第三运动场', location: '第三运动场', icon: '🏐', count: 6, capacity: 12, prefix: '排' },
+  { id: 'volleyball-indoor', name: '排球室内场', group: '西体育馆', location: '西体育馆', icon: '🏐', count: 1, capacity: 12, prefix: '排' },
+  { id: 'pingpong', name: '乒乓球馆', group: '东体育馆', location: '东体育馆 1楼', icon: '🏓', count: 36, capacity: 4, prefix: '乒' },
+  { id: 'tennis-indoor', name: '室内网球馆', group: '东体育馆', location: '东体育馆 2楼', icon: '🎾', count: 3, capacity: 4, prefix: '网' },
+  { id: 'tennis-outdoor', name: '室外网球场', group: '室外场地', location: '室外网球场', icon: '🎾', count: 4, capacity: 4, prefix: '网' },
+  { id: 'swim-male', name: '游泳馆（男）', group: '东体育馆游泳馆', location: '东体育馆 游泳馆', icon: '🏊', count: 1, capacity: 1, prefix: '泳' },
+  { id: 'swim-female', name: '游泳馆（女）', group: '东体育馆游泳馆', location: '东体育馆 游泳馆', icon: '🏊', count: 1, capacity: 1, prefix: '泳' },
 ];
 
 const VENUE_MAP = {};
@@ -75,7 +75,7 @@ VENUE_TYPES.forEach((t) => {
   }
 });
 
-const MODE_LABEL = { personal: '个人预约', club: '社团预约' };
+const REASON_POOL = ['日常约球', '院队训练', '班级活动', '朋友聚会打球', '体育课练习', '社团活动'];
 
 const NAME_POOL = ['刘洋', '赵敏', '孙浩', '周琳', '吴桐', '郑凯', '冯雪', '何嘉', '许阳', '邓佳', '曾磊', '崔莹', '宋涛', '谢雨', '钟鸣', '葛亮'];
 
@@ -152,8 +152,8 @@ function seedBookings() {
           const userId = activeUsers[Math.floor(rng() * activeUsers.length)];
           const ownerName = seedUserName(userId);
           const members = [ownerName];
-          for (let m = 1; m < t.capacity; m += 1) members.push(NAME_POOL[Math.floor(rng() * NAME_POOL.length)]);
-          const useClub = t.modes.includes('club') && rng() > 0.75;
+          const extra = Math.floor(rng() * 3);
+          for (let m = 0; m < extra; m += 1) members.push(NAME_POOL[Math.floor(rng() * NAME_POOL.length)]);
           list.push({
             id: 'b_seed_' + (seq++),
             userId: userId,
@@ -161,8 +161,7 @@ function seedBookings() {
             venueNo: no,
             date: date,
             slot: slot,
-            mode: useClub ? 'club' : 'personal',
-            clubName: useClub ? '华农' + t.name + '爱好者协会' : '',
+            reason: REASON_POOL[Math.floor(rng() * REASON_POOL.length)],
             members: members,
             status: rng() > 0.88 ? 'pending' : 'approved',
             createdAt: date + ' 08:00',
@@ -174,21 +173,21 @@ function seedBookings() {
     });
   });
   const mine = [
-    { venueTypeId: 'badminton', venueNo: '01', date: dateStr(0), slot: 19, status: 'approved' },
-    { venueTypeId: 'badminton', venueNo: '03', date: dateStr(1), slot: 17, status: 'approved' },
-    { venueTypeId: 'pingpong', venueNo: '08', date: dateStr(0), slot: 20, status: 'pending' },
-    { venueTypeId: 'tennis-outdoor', venueNo: '02', date: dateStr(1), slot: 16, status: 'pending' },
-    { venueTypeId: 'swim-male', venueNo: '01', date: dateStr(2), slot: 12, status: 'approved' },
+    { venueTypeId: 'badminton', venueNo: '01', date: dateStr(0), slot: 19, status: 'approved', reason: '晚上和室友打双打' },
+    { venueTypeId: 'badminton', venueNo: '03', date: dateStr(1), slot: 17, status: 'approved', reason: '院羽毛球队训练' },
+    { venueTypeId: 'pingpong', venueNo: '08', date: dateStr(0), slot: 20, status: 'pending', reason: '乒乓球课课后练习' },
+    { venueTypeId: 'tennis-outdoor', venueNo: '02', date: dateStr(1), slot: 16, status: 'pending', reason: '和同学约球' },
+    { venueTypeId: 'swim-male', venueNo: '01', date: dateStr(2), slot: 12, status: 'approved', reason: '日常游泳锻炼' },
   ];
   mine.forEach((m) => {
-    const t = VENUE_MAP[m.venueTypeId];
     if (list.some((b) => b.venueTypeId === m.venueTypeId && b.venueNo === m.venueNo && b.date === m.date && b.slot === m.slot)) return;
     const members = ['张伟'];
-    for (let i = 1; i < t.capacity; i += 1) members.push(NAME_POOL[(i * 3) % NAME_POOL.length]);
+    const extra = (m.slot % 2) + 1;
+    for (let i = 0; i < extra; i += 1) members.push(NAME_POOL[(i * 3) % NAME_POOL.length]);
     list.push({
       id: 'b_seed_mine_' + m.venueTypeId + m.venueNo + m.slot,
       userId: 'u_zhangwei', venueTypeId: m.venueTypeId, venueNo: m.venueNo, date: m.date, slot: m.slot,
-      mode: 'personal', clubName: '', members: members, status: m.status,
+      reason: m.reason, members: members, status: m.status,
       createdAt: m.date + ' 08:10', teamId: null, note: '',
     });
   });

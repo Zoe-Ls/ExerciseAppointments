@@ -24,13 +24,13 @@ function setError(id, message) {
   if (el) el.textContent = message;
 }
 
-function collectMembers() {
-  return Array.prototype.slice.call(document.querySelectorAll('.member-input')).map((i) => i.value.trim());
+function collectMembersText() {
+  const el = document.getElementById('booking-members');
+  return el ? el.value.trim() : '';
 }
 
-function collectClub() {
-  const el = document.getElementById('booking-club');
-  return el ? el.value : '';
+function parseMembers(text) {
+  return String(text || '').split(/[、,，;；\s]+/).map((x) => x.trim()).filter(Boolean);
 }
 
 const Actions = {
@@ -120,25 +120,16 @@ const Actions = {
     const st = Store.slotStatus(typeId, no, ui.date, slot);
     if (st.state === 'mine') { ui.modal = { kind: 'booking-detail', id: st.booking.id }; renderModal(); return; }
     if (st.state !== 'free') return;
-    ui.modal = { kind: 'booking', typeId: typeId, no: no, date: ui.date, slot: slot, mode: null, error: '' };
+    ui.modal = { kind: 'booking', typeId: typeId, no: no, date: ui.date, slot: slot, reason: '', membersText: '', error: '' };
     renderModal();
   },
 
-  'pick-mode': function (el) {
+  'booking-to-team': function () {
     const m = ui.modal;
-    m.members = collectMembers();
-    m.clubName = collectClub();
-    m.mode = el.dataset.mode;
-    m.error = '';
-    renderModal();
-  },
-
-  'booking-back': function () {
-    const m = ui.modal;
-    m.members = collectMembers();
-    m.clubName = collectClub();
-    m.mode = null;
-    m.error = '';
+    ui.modal = {
+      kind: 'team-create', typeId: m.typeId, no: m.no, date: m.date, slot: m.slot,
+      title: '', need: 0, contact: '', note: '', error: '',
+    };
     renderModal();
   },
 
@@ -146,11 +137,11 @@ const Actions = {
     const m = ui.modal;
     const r = Store.createBooking({
       venueTypeId: m.typeId, venueNo: m.no, date: m.date, slot: m.slot,
-      mode: m.mode, clubName: collectClub(), members: collectMembers(),
+      reason: val('booking-reason'), members: parseMembers(collectMembersText()),
     });
     if (!r.ok) {
-      m.members = collectMembers();
-      m.clubName = collectClub();
+      m.reason = val('booking-reason');
+      m.membersText = collectMembersText();
       m.error = r.message;
       renderModal();
       return;

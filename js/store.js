@@ -181,16 +181,9 @@ const Store = (function () {
     if (!user) return { ok: false, message: '请先登录' };
     const type = VENUE_MAP[input.venueTypeId];
     if (!type) return { ok: false, message: '场地类型不存在' };
-    if (input.mode === 'club' && !type.modes.includes('club')) {
-      return { ok: false, message: '该场馆不支持社团预约' };
-    }
     const members = (input.members || []).map((m) => String(m || '').trim()).filter(Boolean);
-    if (members.length !== type.capacity) {
-      return { ok: false, message: '需填写 ' + type.capacity + ' 位成员姓名，当前已填 ' + members.length + ' 位' };
-    }
-    if (input.mode === 'club' && !String(input.clubName || '').trim()) {
-      return { ok: false, message: '请填写社团名称' };
-    }
+    const reason = String(input.reason || '').trim();
+    if (!reason) return { ok: false, message: '请填写预约理由' };
     const conflict = findActiveBooking(s, input.venueTypeId, input.venueNo, input.date, input.slot);
     if (conflict) return { ok: false, message: '该时段已被预约，请选择其他时段' };
     const clash = findUserSlotBooking(s, user.id, input.date, input.slot);
@@ -199,8 +192,7 @@ const Store = (function () {
     }
     const booking = {
       id: uid('b'), userId: user.id, venueTypeId: input.venueTypeId, venueNo: input.venueNo,
-      date: input.date, slot: input.slot, mode: input.mode,
-      clubName: input.mode === 'club' ? String(input.clubName).trim() : '',
+      date: input.date, slot: input.slot, reason: reason,
       members: members, status: 'pending', createdAt: nowStamp(),
       teamId: input.teamId || null, note: '',
     };
@@ -380,9 +372,9 @@ const Store = (function () {
     const title = String(input.title || '').trim();
     if (!type) return { ok: false, message: '请选择场馆类型' };
     if (!title) return { ok: false, message: '请填写队伍标题' };
-    const need = Number(input.need) || type.capacity;
-    if (need < 2 || need > type.capacity) {
-      return { ok: false, message: '需要人数需在 2 - ' + type.capacity + ' 人之间' };
+    const need = Number(input.need) || Math.max(2, type.capacity);
+    if (!(need >= 2)) {
+      return { ok: false, message: '需要人数至少 2 人' };
     }
     const ownSlot = findUserSlotBooking(s, user.id, input.date, Number(input.slot));
     if (ownSlot) {
@@ -467,12 +459,11 @@ const Store = (function () {
     if (ownSlot) {
       return { ok: false, message: '队长在该时段已预约了其他场馆（' + slotConflictText(ownSlot) + '），需先取消该预约才能提交组队预约' };
     }
-    const type = VENUE_MAP[team.venueTypeId];
-    const members = memberNames.slice(0, type.capacity);
-    while (members.length < type.capacity) members.push('待定成员');
+    const members = memberNames.slice();
     s.bookings.push({
       id: uid('b'), userId: team.userId, venueTypeId: team.venueTypeId, venueNo: team.venueNo,
-      date: team.date, slot: team.slot, mode: 'personal', clubName: '', members: members,
+      date: team.date, slot: team.slot, members: members,
+      reason: '组队预约：' + (team.title || '组队打球'),
       status: 'pending', createdAt: nowStamp(), teamId: team.id, note: '由组队生成',
     });
     save();

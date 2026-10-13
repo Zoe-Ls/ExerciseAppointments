@@ -55,12 +55,12 @@ CREATE TABLE venue_types (
   location            VARCHAR(64) NOT NULL,
   icon                VARCHAR(16) NOT NULL,
   venue_count         SMALLINT UNSIGNED NOT NULL,
-  capacity            TINYINT UNSIGNED NOT NULL COMMENT '场地规定人数',
-  capacity_note       VARCHAR(64) DEFAULT NULL,
+  capacity            TINYINT UNSIGNED NOT NULL COMMENT '场地参考人数（仅展示，不参与校验）',
+  capacity_note       VARCHAR(64) DEFAULT NULL COMMENT '展示用说明文案',
   code_prefix         VARCHAR(8)  NOT NULL COMMENT '羽/排/乒/网/泳',
-  allow_personal      TINYINT(1) NOT NULL DEFAULT 1,
-  allow_club          TINYINT(1) NOT NULL DEFAULT 1 COMMENT '游泳馆为 0',
-  gender_limit        ENUM('none','male','female') NOT NULL DEFAULT 'none',
+  allow_personal      TINYINT(1) NOT NULL DEFAULT 1 COMMENT '预留字段（已取消个人/社团区分）',
+  allow_club          TINYINT(1) NOT NULL DEFAULT 1 COMMENT '预留字段（已取消个人/社团区分）',
+  gender_limit        ENUM('none','male','female') NOT NULL DEFAULT 'none' COMMENT '预留字段',
   open_hour           TINYINT UNSIGNED NOT NULL DEFAULT 8,
   close_hour          TINYINT UNSIGNED NOT NULL DEFAULT 22,
   slot_minutes        SMALLINT UNSIGNED NOT NULL DEFAULT 60,
@@ -100,9 +100,8 @@ CREATE TABLE bookings (
   slot_start     TIME NOT NULL,
   slot_end       TIME NOT NULL,
   user_id        BIGINT UNSIGNED NOT NULL COMMENT '预约人（组队时为队长）',
-  mode           ENUM('personal','club') NOT NULL DEFAULT 'personal',
-  club_name      VARCHAR(64) DEFAULT NULL,
-  member_count   TINYINT UNSIGNED NOT NULL,
+  reason         VARCHAR(255) NOT NULL COMMENT '预约理由（必填，展示给管理员审核）',
+  member_count   TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '同行成员人数（选填，不限制）',
   status         ENUM('pending','approved','rejected','cancelled','expired') NOT NULL DEFAULT 'pending',
   active_flag    TINYINT UNSIGNED GENERATED ALWAYS AS (IF(status IN ('pending','approved'), 1, NULL)) STORED
                  COMMENT '生效标记：NULL 不参与唯一索引，实现“同一时段仅一条生效预约”',
@@ -383,8 +382,8 @@ VALUES
   ('pingpong',         '乒乓球馆',   '东体育馆',      '东体育馆 1楼',      '🏓', 36,  4, '每张球台限 4 人',               '乒', 1, 1, 'none'),
   ('tennis-indoor',    '室内网球馆', '东体育馆',      '东体育馆 2楼',      '🎾',  3,  4, '每片场地限 4 人',               '网', 1, 1, 'none'),
   ('tennis-outdoor',   '室外网球场', '室外场地',      '室外网球场',        '🎾',  4,  4, '每片场地限 4 人',               '网', 1, 1, 'none'),
-  ('swim-male',        '游泳馆（男）','东体育馆游泳馆','东体育馆 游泳馆',   '🏊',  1,  1, '游泳馆仅支持个人预约（1 人）', '泳', 1, 0, 'male'),
-  ('swim-female',      '游泳馆（女）','东体育馆游泳馆','东体育馆 游泳馆',   '🏊',  1,  1, '游泳馆仅支持个人预约（1 人）', '泳', 1, 0, 'female')
+  ('swim-male',        '游泳馆（男）','东体育馆游泳馆','东体育馆 游泳馆',   '🏊',  1,  1, '游泳馆 1 人',                 '泳', 1, 1, 'male'),
+  ('swim-female',      '游泳馆（女）','东体育馆游泳馆','东体育馆 游泳馆',   '🏊',  1,  1, '游泳馆 1 人',                 '泳', 1, 1, 'female')
 ON DUPLICATE KEY UPDATE
   name = VALUES(name), group_name = VALUES(group_name), location = VALUES(location),
   icon = VALUES(icon), venue_count = VALUES(venue_count), capacity = VALUES(capacity),
@@ -417,10 +416,10 @@ SELECT
 --  防超卖验证（手动执行观察结果）
 --  预期：第 1 条成功；第 2 条报 1062 Duplicate entry 'uk_slot'；第 3 条（不同用户同时段不同场地）受 uk_user_slot 拦截
 -- =====================================================================
--- INSERT INTO bookings (venue_id, venue_type_id, book_date, slot_index, slot_start, slot_end, user_id, mode, member_count, status)
---   VALUES (1, 1, CURDATE() + INTERVAL 1 DAY, 3, '11:00', '12:00', 2, 'personal', 4, 'pending');
--- INSERT INTO bookings (venue_id, venue_type_id, book_date, slot_index, slot_start, slot_end, user_id, mode, member_count, status)
---   VALUES (1, 1, CURDATE() + INTERVAL 1 DAY, 3, '11:00', '12:00', 3, 'personal', 4, 'pending');  -- 期望 1062
+-- INSERT INTO bookings (venue_id, venue_type_id, book_date, slot_index, slot_start, slot_end, user_id, reason, member_count, status)
+--   VALUES (1, 1, CURDATE() + INTERVAL 1 DAY, 3, '11:00', '12:00', 2, '院队训练', 4, 'pending');
+-- INSERT INTO bookings (venue_id, venue_type_id, book_date, slot_index, slot_start, slot_end, user_id, reason, member_count, status)
+--   VALUES (1, 1, CURDATE() + INTERVAL 1 DAY, 3, '11:00', '12:00', 3, '和同学约球', 4, 'pending');  -- 期望 1062
 --
 -- 说明：状态改为 rejected/cancelled 后 active_flag 变为 NULL，该时段即可被再次预约：
 -- UPDATE bookings SET status = 'cancelled' WHERE id = <上一条预约 id>;

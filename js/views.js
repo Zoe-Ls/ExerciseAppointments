@@ -146,7 +146,7 @@ function viewLogin() {
     '20 片羽毛球馆（东体育馆 3楼）｜ 36 张乒乓球台（东体育馆 1楼）',
     '排球：老场 8 片（第二运动场）· 新场 6 片（第三运动场）· 室内 1 片（西体育馆）',
     '室内网球馆 3 片（东体育馆 2楼）· 室外网球场 4 片',
-    '游泳馆（东体育馆）男女各 1 个，仅支持个人预约',
+    '游泳馆（东体育馆）男女各 1 个',
     '开放时间 08:00 - 22:00，每小时一个时段，仅可预约本月日期',
   ];
   return '<div class="auth"><section class="auth-hero">'
@@ -227,7 +227,7 @@ function viewBook() {
     + (conflictCount ? '<div class="banner banner-warn">⏱ ' + dayLabel(ui.date) + ' 你有 <b>' + conflictSlots.size + '</b> 个时段已预约了其他场馆：这些时段的其他场馆暂不能预约或组队，如需改约请先取消对应预约（可到「个人主页 → 我的预约」取消）。</div>' : '')
     + '<div class="card venue-info">'
     + '<span class="venue-icon">' + type.icon + '</span>'
-    + '<div><strong>' + esc(type.name) + '</strong><p class="hint">📍 ' + esc(type.location) + ' ｜ 共 ' + type.count + ' 个场地 ｜ ' + esc(type.capacityNote) + ' ｜ 支持：' + type.modes.map((m) => MODE_LABEL[m]).join(' / ') + '</p></div>'
+    + '<div><strong>' + esc(type.name) + '</strong><p class="hint">📍 ' + esc(type.location) + ' ｜ 共 ' + type.count + ' 个场地 ｜ 直接预约，人数不限，需填写预约理由</p></div>'
     + '<div class="summary-pills"><span class="pill">' + dayLabel(ui.date) + '</span><span class="pill">可约 <b>' + freeCount + '</b></span><span class="pill">已约 / 待审 <b>' + takenCount + '</b></span>'
     + (conflictCount ? '<span class="pill pill-conflict">时段冲突 <b>' + conflictCount + '</b></span>' : '')
     + '</div>'
@@ -386,10 +386,17 @@ function viewMe() {
   let body = '';
   if (tab === 'bookings') {
     body = bookings.length
-      ? '<div class="card table-scroll"><table class="table"><thead><tr><th>场地</th><th>日期</th><th>时段</th><th>模式</th><th>成员</th><th>状态</th><th>操作</th></tr></thead><tbody>'
-        + bookings.map((b) => '<tr><td>' + VENUE_MAP[b.venueTypeId].icon + ' ' + venueLabel(b.venueTypeId, b.venueNo) + '</td><td>' + dayLabel(b.date) + '</td><td>' + slotLabel(b.slot) + '</td><td>' + (MODE_LABEL[b.mode] || '个人预约') + (b.clubName ? '（' + esc(b.clubName) + '）' : '') + '</td>'
-          + '<td class="hint">' + esc(b.members.join('、')) + '</td><td>' + bookingBadge(b.status) + '</td>'
-          + '<td><button class="btn btn-sm btn-danger" data-action="cancel-booking" data-id="' + b.id + '">取消预约</button></td></tr>').join('')
+      ? '<div class="card table-scroll"><table class="table"><thead><tr><th>场地</th><th>日期</th><th>时段</th><th>预约理由</th><th>同行成员</th><th>状态</th><th>操作</th></tr></thead><tbody>'
+        + bookings.map((b) => {
+          const expired = isPastSlot(b.date, b.slot);
+          const action = expired ? '<span class="hint">已过期</span>'
+            : (b.status === 'rejected' ? '<span class="hint">—</span>'
+              : '<button class="btn btn-sm btn-danger" data-action="cancel-booking" data-id="' + b.id + '">取消预约</button>');
+          return '<tr' + (expired ? ' class="is-expired"' : '') + '>'
+            + '<td>' + VENUE_MAP[b.venueTypeId].icon + ' ' + venueLabel(b.venueTypeId, b.venueNo) + '</td><td>' + dayLabel(b.date) + '</td><td>' + slotLabel(b.slot) + '</td><td>' + esc(b.reason || '—') + '</td>'
+            + '<td class="hint">' + esc(b.members && b.members.length ? b.members.join('、') : '—') + '</td><td>' + bookingBadge(b.status) + '</td>'
+            + '<td>' + action + '</td></tr>';
+        }).join('')
         + '</tbody></table></div>'
       : '<div class="card card-pad empty">还没有预约记录，去场馆预约看看吧</div>';
   } else if (tab === 'friends') {
@@ -429,12 +436,12 @@ function viewAdmin() {
     const pending = Store.pendingBookings();
     const handled = Store.load().bookings.filter((b) => b.status !== 'pending').sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)).slice(0, 8);
     body = '<div class="card card-pad" style="margin-bottom:14px"><strong>待审核预约（' + pending.length + '）</strong>'
-      + (pending.length ? '<div class="table-scroll"><table class="table"><thead><tr><th>申请人</th><th>场地</th><th>日期 / 时段</th><th>模式</th><th>成员</th><th>操作</th></tr></thead><tbody>'
+      + (pending.length ? '<div class="table-scroll"><table class="table"><thead><tr><th>申请人</th><th>场地</th><th>日期 / 时段</th><th>预约理由</th><th>同行成员</th><th>操作</th></tr></thead><tbody>'
         + pending.map((b) => '<tr><td>' + userChipById(b.userId) + '</td>'
           + '<td>' + VENUE_MAP[b.venueTypeId].icon + ' ' + venueLabel(b.venueTypeId, b.venueNo) + '</td>'
           + '<td>' + dayLabel(b.date) + '<p class="hint">' + slotLabel(b.slot) + '</p></td>'
-          + '<td>' + (MODE_LABEL[b.mode] || '个人预约') + (b.clubName ? '<p class="hint">' + esc(b.clubName) + '</p>' : '') + '</td>'
-          + '<td class="hint">' + esc(b.members.join('、')) + '</td>'
+          + '<td>' + esc(b.reason || '—') + '</td>'
+          + '<td class="hint">' + esc(b.members && b.members.length ? b.members.join('、') : '—') + '</td>'
           + '<td><div class="row"><button class="btn btn-sm btn-primary" data-action="review-booking" data-id="' + b.id + '" data-status="approved">通过</button>'
           + '<button class="btn btn-sm btn-danger" data-action="review-booking" data-id="' + b.id + '" data-status="rejected">拒绝</button></div></td></tr>').join('')
         + '</tbody></table></div>' : '<p class="hint" style="margin-top:8px">暂无待审核预约 🎉</p>')
@@ -516,38 +523,16 @@ function modalBooking(m) {
   const summary = '<div class="modal-summary"><span class="venue-icon">' + type.icon + '</span><div>'
     + '<strong>' + esc(type.name) + ' · ' + type.prefix + m.no + '</strong>'
     + '<p class="hint">📍 ' + esc(type.location) + ' ｜ ' + dayLabel(m.date) + ' ｜ ' + slotLabel(m.slot) + '</p>'
-    + '<p class="hint">' + esc(type.capacityNote) + ' ｜ 可选模式：' + type.modes.map((x) => MODE_LABEL[x]).join(' / ') + ' / 组队模式</p>'
+    + '<p class="hint">直接预约，无需选择预约模式，人数不限</p>'
     + '</div></div>';
-  if (!m.mode) {
-    const cards = (type.modes.includes('personal') ? '<button class="mode-card" data-action="pick-mode" data-mode="personal"><strong>👤 个人预约</strong><span>填写全部 ' + type.capacity + ' 位成员姓名后提交预约</span></button>' : '')
-      + (type.modes.includes('club') ? '<button class="mode-card" data-action="pick-mode" data-mode="club"><strong>🏛 社团预约</strong><span>以社团名义预约，填写社团名称与全部成员姓名</span></button>' : '')
-      + '<button class="mode-card" data-action="pick-mode" data-mode="team"><strong>🤝 组队模式</strong><span>人数不足时发布组队消息，招满后再提交预约</span></button>';
-    return modalShell('预约场地', summary + '<div class="modal-body"><p class="section-hint">请选择预约模式</p><div class="mode-cards">' + cards + '</div></div>');
-  }
-  let body = '<div class="modal-body">';
-  if (m.mode === 'team') {
-    body += '<div class="field"><label>队伍标题</label><input id="team-title" value="' + esc(type.name + ' 组队招募') + '"></div>'
-      + '<div class="field-grid">'
-      + '<div class="field"><label>需要人数（场地规定 ' + type.capacity + ' 人）</label><input id="team-need" type="number" min="2" max="' + type.capacity + '" value="' + type.capacity + '"></div>'
-      + '<div class="field"><label>联系方式</label><input id="team-contact" placeholder="微信号 / 手机号"></div>'
-      + '</div>'
-      + '<div class="field"><label>说明</label><textarea class="textarea" id="team-note" rows="2" placeholder="例如：还差 2 人，水平不限"></textarea></div>'
-      + '<p class="hint">提交后会生成一条组队消息，其他同学可申请加入；你在「组队」页面同意后，人数满额即可提交预约。</p>';
-  } else {
-    if (m.mode === 'club') {
-      body += '<div class="field"><label>社团名称</label><input id="booking-club" placeholder="例如：园艺学院羽毛球社" value="' + esc(m.clubName || '') + '"></div>';
-    }
-    body += '<p class="section-hint">请填写场地规定人数内的全部 ' + type.capacity + ' 位成员姓名；人数不足时可返回选择组队模式</p><div class="member-grid">';
-    for (let i = 0; i < type.capacity; i += 1) {
-      const preset = (m.members && m.members[i]) || (i === 0 ? user.name : '');
-      body += '<input class="member-input" placeholder="成员 ' + (i + 1) + ' 姓名" value="' + esc(preset) + '">';
-    }
-    body += '</div>';
-  }
-  body += '<p class="form-error">' + esc(m.error || '') + '</p></div>';
-  const foot = '<div class="modal-foot"><button class="btn" data-action="booking-back">返回</button>'
-    + '<button class="btn btn-primary" data-action="' + (m.mode === 'team' ? 'team-create-submit' : 'booking-submit') + '">'
-    + (m.mode === 'team' ? '发布组队消息' : '提交预约') + '</button></div>';
+  const body = '<div class="modal-body">'
+    + '<div class="field"><label>预约理由（必填）</label><textarea class="textarea" id="booking-reason" rows="3" placeholder="例如：院队训练 / 和同学约球 / 班级活动">' + esc(m.reason || '') + '</textarea></div>'
+    + '<div class="field"><label>同行成员（选填，不限人数）</label><input id="booking-members" placeholder="多个姓名用「、」或逗号分隔，例如：张伟、李娜" value="' + esc(m.membersText || user.name) + '"></div>'
+    + '<p class="hint">管理员审核时会看到预约理由，请写清用途；同行成员仅作记录，不限制人数。</p>'
+    + '<p class="form-error">' + esc(m.error || '') + '</p></div>';
+  const foot = '<div class="modal-foot"><button class="btn" data-action="close-modal">取消</button>'
+    + '<button class="btn" data-action="booking-to-team">改为组队</button>'
+    + '<button class="btn btn-primary" data-action="booking-submit">提交预约</button></div>';
   return modalShell('预约场地', summary + body + foot);
 }
 
@@ -558,8 +543,8 @@ function modalBookingDetail(m) {
     ['场地', venueLabel(b.venueTypeId, b.venueNo)],
     ['日期', dayLabel(b.date)],
     ['时段', slotLabel(b.slot)],
-    ['模式', (MODE_LABEL[b.mode] || '个人预约') + (b.clubName ? '（' + b.clubName + '）' : '')],
-    ['成员', b.members.join('、')],
+    ['预约理由', b.reason || '—'],
+    ['同行成员', b.members && b.members.length ? b.members.join('、') : '—'],
     ['状态', b.status === 'approved' ? '管理员已通过' : (b.status === 'rejected' ? '已被拒绝' : '等待管理员审核')],
     ['提交时间', b.createdAt],
   ];
