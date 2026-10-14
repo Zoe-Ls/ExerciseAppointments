@@ -215,6 +215,23 @@ const Store = (function () {
     return load().bookings.filter((b) => b.userId === userId);
   }
 
+  function purgeExpiredBookings() {
+    const s = load();
+    const cutoff = Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000;
+    const kept = [];
+    let removed = 0;
+    s.bookings.forEach((b) => {
+      const start = slotStartDate(b.date, b.slot);
+      if (start && start.getTime() < cutoff) { removed += 1; return; }
+      kept.push(b);
+    });
+    if (removed) {
+      s.bookings = kept;
+      save();
+    }
+    return { removed: removed };
+  }
+
   function cancelBooking(id) {
     const s = load();
     const user = currentUser();
@@ -551,6 +568,7 @@ const Store = (function () {
     loginStudent: loginStudent, loginAdmin: loginAdmin, register: register, logout: logout,
     setPassword: setPassword, updateProfile: updateProfile,
     slotStatus: slotStatus, createBooking: createBooking, bookingsOf: bookingsOf,
+    purgeExpiredBookings: purgeExpiredBookings,
     cancelBooking: cancelBooking, pendingBookings: pendingBookings, reviewBooking: reviewBooking,
     posts: posts, createPost: createPost, addComment: addComment, toggleLike: toggleLike, toggleFavorite: toggleFavorite,
     report: report, reports: function () { return load().reports.slice(); }, resolveReport: resolveReport,

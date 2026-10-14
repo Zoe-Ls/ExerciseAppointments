@@ -8,6 +8,7 @@ const HZAU = {
 
 const OPEN_HOUR = 8;
 const CLOSE_HOUR = 22;
+const RETENTION_DAYS = 7;
 
 function pad2(n) {
   return String(n).padStart(2, '0');
@@ -46,6 +47,12 @@ function isPastSlot(date, slotId) {
   if (date > today) return false;
   if (date < today) return true;
   return slotId <= new Date().getHours();
+}
+
+function slotStartDate(date, slotId) {
+  const parts = String(date || '').split('-');
+  if (parts.length !== 3) return null;
+  return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), Number(slotId), 0, 0, 0);
 }
 
 const TIME_SLOTS = Array.from({ length: CLOSE_HOUR - OPEN_HOUR }, (_, i) => {
