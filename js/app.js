@@ -48,6 +48,8 @@ function renderApp() {
       const teamDate = queryParam('teamDate');
       ui.teamDate = /^\d{4}-\d{2}-\d{2}$/.test(teamDate) ? teamDate : '';
       ui.mineTeams = queryParam('mine') === '1';
+      if (path === 'me') Store.markUnreadRead(ui.meTab);
+      if (path === 'teams') Store.markUnreadRead('teamApps');
       app.innerHTML = tr((STUDENT_VIEWS[path] || Views.book)());
     }
     if (user && user.mustChangePassword && (!ui.modal || ui.modal.kind !== 'password')) {

@@ -208,7 +208,12 @@ const Actions = {
     if (r.ok) renderApp();
   },
 
-  'open-team-manage': function (el) { ui.modal = { kind: 'team-manage', id: el.dataset.id }; renderModal(); },
+  'open-team-manage': function (el) {
+    Store.markTeamApplicationsSeen(el.dataset.id);
+    ui.modal = { kind: 'team-manage', id: el.dataset.id };
+    renderApp();
+    renderModal();
+  },
 
   'team-leave': function (el) {
     const r = Store.leaveTeam(el.dataset.id);
@@ -220,6 +225,7 @@ const Actions = {
   'open-notice-history': function () { ui.modal = { kind: 'notice-history' }; renderModal(); },
 
   'team-review': function (el) {
+    Store.markTeamApplicationsSeen(el.dataset.id);
     const r = Store.reviewTeamMember(el.dataset.id, el.dataset.user, el.dataset.approve === '1');
     if (!r.ok) { toast(r.message, 'error'); return; }
     toast(el.dataset.approve === '1' ? '已同意入队申请' : '已拒绝入队申请');
@@ -298,7 +304,11 @@ const Actions = {
     renderApp();
   },
 
-  'pick-me-tab': function (el) { ui.meTab = el.dataset.tab; renderApp(); },
+  'pick-me-tab': function (el) {
+    ui.meTab = el.dataset.tab;
+    Store.markUnreadRead(el.dataset.tab);
+    renderApp();
+  },
   'pick-admin-tab': function (el) { ui.adminTab = el.dataset.tab; renderApp(); },
 
   'review-booking': function (el) {

@@ -98,7 +98,14 @@ function shell(user, activePath, content) {
   const items = user.role === 'admin'
     ? [['admin', '管理后台', '🛠']]
     : [['book', '场馆预约', '📅'], ['teams', '组队', '🤝'], ['forum', '交流中心', '💬'], ['me', '个人主页', '🙂']];
-  const nav = items.map((it) => '<a href="#/' + it[0] + '" class="' + (activePath === it[0] ? 'active' : '') + '">' + it[2] + ' ' + it[1] + '</a>').join('');
+  const unreadKinds = ['bookings', 'posts', 'friends', 'teams'];
+  const hasUnread = unreadKinds.some((k) => Store.unreadCount(user, k) > 0);
+  const nav = items.map((it) => {
+    const pendingApps = it[0] === 'teams' && Store.unreadCount(user, 'teamApps') > 0;
+    const dot = (it[0] === 'me' && hasUnread) ? '<span class="dot-red" title="有新的更新"></span>'
+      : (pendingApps ? '<span class="dot-red" title="有新的入队申请"></span>' : '');
+    return '<a href="#/' + it[0] + '" class="' + (activePath === it[0] ? 'active' : '') + '">' + it[2] + ' ' + it[1] + dot + '</a>';
+  }).join('');
   let banners = '';
   if (user.banned) {
     banners += '<div class="banner banner-red">🚫 你的账号已被封禁：不能发帖、评论、添加好友，但仍可正常预约场馆。如需申诉请联系场馆管理员。</div>';
@@ -256,7 +263,7 @@ function teamCard(team, user) {
   if (expired) {
     actions = '<span class="hint">活动时间已过，不能再申请、管理或退出</span>';
   } else if (isOwner) {
-    actions = '<button class="btn btn-sm btn-primary" data-action="open-team-manage" data-id="' + team.id + '">管理队伍' + (pending.length ? '（' + pending.length + tu('条申请', pending.length) + '）' : '') + '</button>'
+    actions = '<button class="btn btn-sm btn-primary" data-action="open-team-manage" data-id="' + team.id + '">管理队伍' + (team.newApplications > 0 ? '<span class="dot-red" title="有新的入队申请"></span>' : '') + (pending.length ? '（' + pending.length + tu('条申请', pending.length) + '）' : '') + '</button>'
       + '<button class="btn btn-sm" data-action="team-book" data-id="' + team.id + '"' + (joined.length < team.need || team.status === 'booked' ? ' disabled' : '') + '>满员后提交预约</button>';
   } else if (mine) {
     if (mine.status === 'pending') {
@@ -388,6 +395,19 @@ function profileField(label, id, value, type) {
   return '<div class="field"><label>' + label + '</label><input id="' + id + '" type="' + (type || 'text') + '" value="' + tf(value) + '"></div>';
 }
 
+const ME_TAB_KIND = { bookings: 'bookings', teams: 'teams', friends: 'friends', posts: 'posts' };
+const ME_TAB_DOT_TITLE = {
+  bookings: '有预约状态更新',
+  teams: '组队状态有更新',
+  friends: '有新的好友申请',
+  posts: '帖子有新的互动',
+};
+
+function meTabDot(user, tabId) {
+  const kind = ME_TAB_KIND[tabId];
+  if (!kind || Store.unreadCount(user, kind) <= 0) return '';
+  return '<span class="dot-red" title="' + ME_TAB_DOT_TITLE[kind] + '"></span>';
+}
 function viewMe() {
   const user = Store.currentUser();
   const tab = ui.meTab;
@@ -475,7 +495,7 @@ function viewMe() {
 
   const content = '<div class="page-head"><div><h1 class="page-title">个人主页</h1><p class="sub">完善资料，方便同学找到你一起运动</p></div></div>'
     + profile
-    + '<div class="tabs-line" style="margin-top:16px">' + tabs.map((t) => '<button class="' + (tab === t[0] ? 'active' : '') + '" data-action="pick-me-tab" data-tab="' + t[0] + '">' + t[1] + '</button>').join('') + '</div>'
+    + '<div class="tabs-line" style="margin-top:16px">' + tabs.map((t) => '<button class="' + (tab === t[0] ? 'active' : '') + '" data-action="pick-me-tab" data-tab="' + t[0] + '">' + t[1] + meTabDot(user, t[0]) + '</button>').join('') + '</div>'
     + body;
   return shell(user, 'me', content);
 }

@@ -259,7 +259,12 @@ const Store = (function () {
     if (!booking) return { ok: false, message: '预约不存在' };
     if (booking.userId !== user.id) return { ok: false, message: '只能取消自己的预约' };
     s.bookings = s.bookings.filter((b) => b.id !== id);
-    s.teams.forEach((t) => { if (t.id === booking.teamId) t.status = 'open'; });
+    s.teams.forEach((t) => {
+      if (t.id === booking.teamId) {
+        t.status = 'open';
+        t.members.filter((m) => m.status === 'joined' && m.userId !== t.userId).forEach((m) => bumpUnread(m.userId, 'teams'));
+      }
+    });
     save();
     return { ok: true };
   }
@@ -268,12 +273,50 @@ const Store = (function () {
     return load().bookings.filter((b) => b.status === 'pending').sort(compareBySlotTime);
   }
 
+  function unreadCount(target, kind) {
+    const user = typeof target === 'string' ? load().users.find((u) => u.id === target) : target;
+    if (!user) return 0;
+    const raw = user.unread || {};
+    let n = raw[kind] || 0;
+    if (kind === 'bookings') n += user.bookingUpdates || 0;
+    return n;
+  }
+
+  function bumpUnread(userId, kind) {
+    const target = load().users.find((u) => u.id === userId);
+    if (!target) return;
+    target.unread = target.unread || {};
+    target.unread[kind] = (target.unread[kind] || 0) + 1;
+  }
+
+  function markTeamApplicationsSeen(teamId) {
+    const team = load().teams.find((t) => t.id === teamId);
+    if (!team) return { ok: false, message: '队伍不存在' };
+    team.newApplications = 0;
+    save();
+    return { ok: true };
+  }
+
+  function markUnreadRead(kind) {
+    const user = currentUser();
+    if (!user || !kind) return { ok: true };
+    const target = load().users.find((u) => u.id === user.id);
+    if (!target) return { ok: true };
+    target.unread = target.unread || {};
+    target.unread[kind] = 0;
+    if (kind === 'bookings') target.bookingUpdates = 0;
+    save();
+    return { ok: true };
+  }
+
   function reviewBooking(id, status) {
     const booking = load().bookings.find((b) => b.id === id);
     if (!booking) return { ok: false, message: '预约不存在' };
     if (isPastSlot(booking.date, booking.slot)) return { ok: false, message: '该预约的活动时间已过，不能再审核' };
+    const changed = booking.status !== status;
     booking.status = status;
     booking.reviewedAt = nowStamp();
+    if (changed) bumpUnread(booking.userId, 'bookings');
     save();
     return { ok: true };
   }
@@ -302,6 +345,7 @@ const Store = (function () {
     const text = String(content || '').trim();
     if (!text) return { ok: false, message: '请输入评论内容' };
     post.comments.push({ id: uid('c'), userId: user.id, content: text, createdAt: nowStamp() });
+    if (post.userId !== user.id) bumpUnread(post.userId, 'posts');
     save();
     return { ok: true };
   }
@@ -313,6 +357,7 @@ const Store = (function () {
     if (!post || !user) return { ok: false };
     const i = post.likes.indexOf(user.id);
     if (i >= 0) post.likes.splice(i, 1); else post.likes.push(user.id);
+    if (i < 0 && post.userId !== user.id) bumpUnread(post.userId, 'posts');
     save();
     return { ok: true, liked: i < 0 };
   }
@@ -324,6 +369,7 @@ const Store = (function () {
     if (!post || !user) return { ok: false };
     const i = post.favorites.indexOf(user.id);
     if (i >= 0) post.favorites.splice(i, 1); else post.favorites.push(user.id);
+    if (i < 0 && post.userId !== user.id) bumpUnread(post.userId, 'posts');
     save();
     return { ok: true, saved: i < 0 };
   }
@@ -388,6 +434,7 @@ const Store = (function () {
     const pending = s.friendRequests.find((r) => r.fromId === user.id && r.toId === targetId && r.status === 'pending');
     if (pending) return { ok: false, message: '已发送过好友申请，等待对方同意' };
     s.friendRequests.push({ id: uid('f'), fromId: user.id, toId: targetId, status: 'pending', createdAt: nowStamp() });
+    bumpUnread(targetId, 'friends');
     save();
     return { ok: true, message: '好友申请已发送' };
   }
@@ -458,6 +505,8 @@ const Store = (function () {
       return { ok: false, message: '你在该时段已预约了其他场馆（' + slotConflictText(ownSlot) + '），需先取消该预约才能加入队伍' };
     }
     team.members.push({ userId: user.id, name: user.name, status: 'pending', note: String(note || '').trim() });
+    team.newApplications = (team.newApplications || 0) + 1;
+    bumpUnread(team.userId, 'teamApps');
     save();
     return { ok: true, message: '入队申请已发送，等待队长同意' };
   }
@@ -479,6 +528,8 @@ const Store = (function () {
     } else {
       team.members = team.members.filter((m) => m.userId !== userId);
     }
+    team.newApplications = 0;
+    bumpUnread(userId, 'teams');
     save();
     return { ok: true };
   }
@@ -515,6 +566,7 @@ const Store = (function () {
     const result = createBookingForTeam(team, joined.map((m) => m.name));
     if (result.ok) {
       team.status = 'booked';
+      joined.forEach((m) => { if (m.userId !== team.userId) bumpUnread(m.userId, 'teams'); });
       save();
     }
     return result;
@@ -590,6 +642,7 @@ const Store = (function () {
     slotStatus: slotStatus, createBooking: createBooking, bookingsOf: bookingsOf,
     purgeExpiredBookings: purgeExpiredBookings, purgeExpiredTeams: purgeExpiredTeams,
     cancelBooking: cancelBooking, pendingBookings: pendingBookings, reviewBooking: reviewBooking,
+    markUnreadRead: markUnreadRead, unreadCount: unreadCount, markTeamApplicationsSeen: markTeamApplicationsSeen,
     posts: posts, createPost: createPost, addComment: addComment, toggleLike: toggleLike, toggleFavorite: toggleFavorite,
     report: report, reports: function () { return load().reports.slice(); }, resolveReport: resolveReport,
     friendRequestsFor: friendRequestsFor, sentFriendRequests: sentFriendRequests, isFriend: isFriend,

@@ -312,6 +312,7 @@ b, strong { font-weight: 700; }
 .dot-mine { background: var(--mine-100); border-color: var(--mine-300); }
 .dot-past { background: var(--past-100); border-color: var(--past-300); }
 .dot-conflict { background: repeating-linear-gradient(45deg, var(--danger-100) 0 5px, #f7ddd6 5px 10px); border-color: var(--danger-300); }
+.dot-red { display: inline-block; width: 7px; height: 7px; margin-left: 6px; border-radius: 50%; background: #e5484d; box-shadow: 0 0 0 2px rgba(229, 72, 77, .22); vertical-align: middle; }
 
 .venue-info { display: flex; align-items: center; gap: 14px; padding: 16px 20px; flex-wrap: wrap; }
 .venue-icon {
