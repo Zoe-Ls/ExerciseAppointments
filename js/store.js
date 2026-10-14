@@ -11,10 +11,12 @@ const Store = (function () {
     return JSON.parse(JSON.stringify(value));
   }
 
+  const NAV_KINDS = ['bookings', 'posts', 'friends', 'teams', 'invites'];
+
   function blankState() {
     return {
       users: [], bookings: [], posts: [], notices: [], teams: [], reports: [],
-      friendRequests: [], teamArchive: [], session: { userId: null },
+      friendRequests: [], teamArchive: [], teamInvites: [], session: { userId: null },
     };
   }
 
@@ -287,6 +289,7 @@ const Store = (function () {
     if (!target) return;
     target.unread = target.unread || {};
     target.unread[kind] = (target.unread[kind] || 0) + 1;
+    if (NAV_KINDS.indexOf(kind) >= 0) target.unreadNav = true;
   }
 
   function markTeamApplicationsSeen(teamId) {
@@ -297,6 +300,16 @@ const Store = (function () {
     return { ok: true };
   }
 
+  function markNavRead() {
+    const user = currentUser();
+    if (!user || !user.unreadNav) return { ok: true };
+    const target = load().users.find((u) => u.id === user.id);
+    if (target) {
+      target.unreadNav = false;
+      save();
+    }
+    return { ok: true };
+  }
   function markUnreadRead(kind) {
     const user = currentUser();
     if (!user || !kind) return { ok: true };
@@ -646,6 +659,83 @@ const Store = (function () {
     save();
     return { ok: true, message: '已将该队员移出队伍' };
   }
+  function teamInvitesFor(userId) {
+    return (load().teamInvites || [])
+      .filter((i) => i.toId === userId && i.status === 'pending')
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  }
+
+  function teamInviteHistory(userId) {
+    return (load().teamInvites || [])
+      .filter((i) => i.fromId === userId && i.status !== 'pending')
+      .sort((a, b) => ((a.resolvedAt || a.createdAt) < (b.resolvedAt || b.createdAt) ? 1 : -1))
+      .slice(0, 10);
+  }
+
+  function inviteFriendToTeam(teamId, friendId) {
+    const s = load();
+    const user = currentUser();
+    if (!user) return { ok: false, message: '请先登录' };
+    const team = s.teams.find((t) => t.id === teamId);
+    if (!team) return { ok: false, message: '队伍不存在' };
+    if (isPastSlot(team.date, team.slot)) return { ok: false, message: '该组队活动时间已过，不能再操作' };
+    if (team.userId !== user.id) return { ok: false, message: '只有队长可以邀请好友' };
+    if (team.status === 'booked') return { ok: false, message: '队伍已提交预约，需队长取消预约后才能邀请' };
+    if (!isFriend(user.id, friendId)) return { ok: false, message: '只能邀请好友加入队伍' };
+    if (team.members.filter((m) => m.status === 'joined').length >= team.need) {
+      return { ok: false, message: '队伍人数已满，可先调整需要人数' };
+    }
+    const exist = team.members.find((m) => m.userId === friendId);
+    if (exist && exist.status === 'removed') return { ok: false, message: '该好友已被移出队伍，不能再邀请' };
+    if (exist && exist.status === 'joined') return { ok: false, message: '该好友已在队伍中' };
+    s.teamInvites = s.teamInvites || [];
+    if (s.teamInvites.some((i) => i.teamId === teamId && i.toId === friendId && i.status === 'pending')) {
+      return { ok: false, message: '已邀请过该好友，等待对方回应' };
+    }
+    s.teamInvites.unshift({
+      id: uid('n'), teamId: teamId, fromId: user.id, toId: friendId,
+      status: 'pending', createdAt: nowStamp(), resolvedAt: '',
+    });
+    bumpUnread(friendId, 'invites');
+    save();
+    return { ok: true, message: '邀请已发送' };
+  }
+
+  function respondTeamInvite(inviteId, accept) {
+    const s = load();
+    const user = currentUser();
+    if (!user) return { ok: false, message: '请先登录' };
+    const invite = (s.teamInvites || []).find((i) => i.id === inviteId);
+    if (!invite) return { ok: false, message: '邀请不存在' };
+    if (invite.toId !== user.id) return { ok: false, message: '只能处理发给自己的邀请' };
+    if (invite.status !== 'pending') return { ok: false, message: '该邀请已处理' };
+    const team = s.teams.find((t) => t.id === invite.teamId);
+    if (!team) return { ok: false, message: '队伍不存在' };
+    if (!accept) {
+      invite.status = 'rejected';
+      invite.resolvedAt = nowStamp();
+      bumpUnread(invite.fromId, 'invites');
+      save();
+      return { ok: true, message: '已拒绝该邀请' };
+    }
+    if (isPastSlot(team.date, team.slot)) return { ok: false, message: '该组队活动时间已过，不能再操作' };
+    if (team.status === 'booked') return { ok: false, message: '该队伍已提交预约，无法加入' };
+    if (team.members.filter((m) => m.status === 'joined').length >= team.need) {
+      return { ok: false, message: '队伍人数已满，无法加入' };
+    }
+    const exist = team.members.find((m) => m.userId === user.id);
+    if (exist && exist.status === 'removed') return { ok: false, message: '你已被移出该队伍，不能再加入' };
+    if (exist) exist.status = 'joined';
+    else team.members.push({ userId: user.id, name: user.name, status: 'joined' });
+    invite.status = 'accepted';
+    invite.resolvedAt = nowStamp();
+    team.events = [{ id: uid('e'), kind: 'join', userId: user.id, name: user.name, createdAt: nowStamp() }]
+      .concat(team.events || []).slice(0, 10);
+    if (team.members.filter((m) => m.status === 'joined').length >= team.need) team.status = 'full';
+    bumpUnread(invite.fromId, 'invites');
+    save();
+    return { ok: true, message: '已加入该队伍' };
+  }
   function leaveTeam(teamId) {
     const s = load();
     const user = currentUser();
@@ -766,7 +856,7 @@ const Store = (function () {
     slotStatus: slotStatus, createBooking: createBooking, bookingsOf: bookingsOf,
     purgeExpiredBookings: purgeExpiredBookings, purgeExpiredTeams: purgeExpiredTeams,
     cancelBooking: cancelBooking, pendingBookings: pendingBookings, reviewBooking: reviewBooking,
-    markUnreadRead: markUnreadRead, unreadCount: unreadCount, markTeamApplicationsSeen: markTeamApplicationsSeen,
+    markUnreadRead: markUnreadRead, markNavRead: markNavRead, unreadCount: unreadCount, markTeamApplicationsSeen: markTeamApplicationsSeen,
     posts: posts, createPost: createPost, addComment: addComment, toggleLike: toggleLike, toggleFavorite: toggleFavorite,
     report: report, reports: function () { return load().reports.slice(); }, resolveReport: resolveReport,
     friendRequestsFor: friendRequestsFor, sentFriendRequests: sentFriendRequests, isFriend: isFriend,
@@ -774,6 +864,7 @@ const Store = (function () {
     removeFriend: removeFriend, blockFriend: blockFriend, unblockUser: unblockUser, hasBlocked: hasBlocked, isBlockedBy: isBlockedBy,
     teams: teams, createTeam: createTeam, applyTeam: applyTeam, reviewTeamMember: reviewTeamMember,
     leaveTeam: leaveTeam, updateTeamNeed: updateTeamNeed, removeTeamMember: removeTeamMember,
+    teamInvitesFor: teamInvitesFor, teamInviteHistory: teamInviteHistory, inviteFriendToTeam: inviteFriendToTeam, respondTeamInvite: respondTeamInvite,
     teamsOfUserInMonth: teamsOfUserInMonth,
     confirmTeamBooking: confirmTeamBooking, notices: notices, publishNotice: publishNotice,
     deleteNotice: deleteNotice, stats: stats,

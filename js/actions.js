@@ -230,6 +230,21 @@ const Actions = {
     renderModal();
   },
 
+
+  'open-team-invite': function (el) { ui.modal = { kind: 'team-invite', id: el.dataset.id }; renderModal(); },
+
+  'team-invite': function (el) {
+    const r = Store.inviteFriendToTeam(el.dataset.id, el.dataset.user);
+    toast(r.message || (r.ok ? '邀请已发送' : '操作失败'), r.ok ? 'ok' : 'error');
+    if (r.ok) renderModal();
+  },
+
+  'team-invite-respond': function (el) {
+    const r = Store.respondTeamInvite(el.dataset.id, el.dataset.accept === '1');
+    if (!r.ok) { toast(r.message, 'error'); return; }
+    toast(r.message || '已处理邀请');
+    renderApp();
+  },
   'team-remove': function (el) {
     if (!window.confirm('确定要将该队员移出队伍吗？移出后对方会收到通知。')) return;
     const r = Store.removeTeamMember(el.dataset.id, el.dataset.user);
@@ -346,6 +361,7 @@ const Actions = {
 
   'pick-me-tab': function (el) {
     ui.meTab = el.dataset.tab;
+    Store.markNavRead();
     Store.markUnreadRead(el.dataset.tab);
     renderApp();
   },

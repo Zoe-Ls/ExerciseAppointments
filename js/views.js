@@ -98,8 +98,7 @@ function shell(user, activePath, content) {
   const items = user.role === 'admin'
     ? [['admin', '管理后台', '🛠']]
     : [['book', '场馆预约', '📅'], ['teams', '组队', '🤝'], ['forum', '交流中心', '💬'], ['me', '个人主页', '🙂']];
-  const unreadKinds = ['bookings', 'posts', 'friends', 'teams'];
-  const hasUnread = unreadKinds.some((k) => Store.unreadCount(user, k) > 0);
+  const hasUnread = !!user.unreadNav;
   const nav = items.map((it) => {
     const pendingApps = it[0] === 'teams' && Store.unreadCount(user, 'teamApps') > 0;
     const dot = (it[0] === 'me' && hasUnread) ? '<span class="dot-red" title="有新的更新"></span>'
@@ -264,6 +263,7 @@ function teamCard(team, user) {
     actions = '<span class="hint">活动时间已过，不能再申请、管理或退出</span>';
   } else if (isOwner) {
     actions = '<button class="btn btn-sm btn-primary" data-action="open-team-manage" data-id="' + team.id + '">管理队伍' + (team.newApplications > 0 ? '<span class="dot-red" title="有新的入队申请"></span>' : '') + (pending.length ? '（' + pending.length + tu('条申请', pending.length) + '）' : '') + '</button>'
+      + '<button class="btn btn-sm" data-action="open-team-invite" data-id="' + team.id + '"' + (joined.length >= team.need || team.status === 'booked' ? ' disabled' : '') + '>邀请好友</button>'
       + '<button class="btn btn-sm" data-action="team-book" data-id="' + team.id + '"' + (joined.length < team.need || team.status === 'booked' ? ' disabled' : '') + '>满员后提交预约</button>';
   } else if (mine) {
     if (mine.status === 'removed') {
@@ -398,12 +398,13 @@ function profileField(label, id, value, type) {
   return '<div class="field"><label>' + label + '</label><input id="' + id + '" type="' + (type || 'text') + '" value="' + tf(value) + '"></div>';
 }
 
-const ME_TAB_KIND = { bookings: 'bookings', teams: 'teams', friends: 'friends', posts: 'posts' };
+const ME_TAB_KIND = { bookings: 'bookings', teams: 'teams', friends: 'friends', posts: 'posts', invites: 'invites' };
 const ME_TAB_DOT_TITLE = {
   bookings: '有预约状态更新',
   teams: '组队状态有更新',
   friends: '有新的好友申请',
   posts: '帖子有新的互动',
+  invites: '有新的组队邀请消息',
 };
 
 function meTabDot(user, tabId) {
@@ -420,7 +421,8 @@ function viewMe() {
   const myPosts = Store.posts().filter((p) => p.userId === user.id);
   const favorites = Store.posts().filter((p) => p.favorites.indexOf(user.id) >= 0);
   const myTeams = Store.teamsOfUserInMonth(user.id);
-  const tabs = [['bookings', '我的预约 ' + bookings.length], ['teams', '我的组队 ' + myTeams.length], ['friends', '我的好友 ' + friends.length], ['posts', '我的帖子 ' + myPosts.length], ['favorites', '我的收藏 ' + favorites.length]];
+  const inviteCount = Store.teamInvitesFor(user.id).length;
+  const tabs = [['bookings', '我的预约 ' + bookings.length], ['teams', '我的组队 ' + myTeams.length], ['invites', '申请组队 ' + inviteCount], ['friends', '我的好友 ' + friends.length], ['posts', '我的帖子 ' + myPosts.length], ['favorites', '我的收藏 ' + favorites.length]];
   const profile = '<div class="card card-pad">'
     + '<div class="profile-head">'
     + '<div class="avatar-upload">' + avatarHtml(user, 'avatar-lg')
@@ -478,6 +480,34 @@ function viewMe() {
         }).join('')
         + '</tbody></table></div>'
       : '<div class="card card-pad empty">本月还没有组队记录，去组队模块发布或加入一支队伍吧</div>';
+  } else if (tab === 'invites') {
+    const incoming = Store.teamInvitesFor(user.id);
+    const outgoing = Store.teamInviteHistory(user.id);
+    const teamOf = (id) => Store.load().teams.find((x) => x.id === id) || Store.load().teamArchive.find((x) => x.id === id);
+    body = '<div class="card card-pad"><strong>收到的组队邀请（' + incoming.length + '）</strong>'
+      + (incoming.length ? incoming.map((iv) => {
+        const team = teamOf(iv.teamId);
+        const from = Store.userById(iv.fromId);
+        if (!team) return '<div class="row-between" style="margin-top:10px"><span class="hint">该队伍已不存在</span></div>';
+        return '<div class="row-between" style="margin-top:10px"><div>'
+          + '<div>' + tf(team.title) + '</div>'
+          + '<span class="hint">' + venueLabel(team.venueTypeId, team.venueNo) + ' ｜ ' + dayLabel(team.date) + ' ' + slotLabel(team.slot) + ' ｜ 邀请人：' + tf(from ? from.name : '未知') + '</span></div>'
+          + '<div class="row"><button class="btn btn-sm btn-primary" data-action="team-invite-respond" data-id="' + iv.id + '" data-accept="1">同意</button>'
+          + '<button class="btn btn-sm" data-action="team-invite-respond" data-id="' + iv.id + '" data-accept="0">拒绝</button></div></div>';
+      }).join('') : '<p class="hint" style="margin-top:8px">暂无组队邀请</p>')
+      + '</div>'
+      + '<div class="card card-pad" style="margin-top:14px"><strong>我发出的邀请（' + outgoing.length + '）</strong>'
+      + (outgoing.length ? outgoing.map((iv) => {
+        const team = teamOf(iv.teamId);
+        const to = Store.userById(iv.toId);
+        const statusText = iv.status === 'accepted' ? badge('对方已同意，已加入队伍', 'green')
+          : badge('对方已拒绝', 'red');
+        return '<div class="row-between" style="margin-top:10px"><div>'
+          + '<div>' + (team ? tf(team.title) : '队伍已解散') + '</div>'
+          + '<span class="hint">受邀人：' + tf(to ? to.name : '未知') + ' ｜ ' + esc(iv.resolvedAt || iv.createdAt) + '</span></div>'
+          + statusText + '</div>';
+      }).join('') : '<p class="hint" style="margin-top:8px">还没有发出过邀请</p>')
+      + '</div>';
   } else if (tab === 'friends') {
     body = '<div class="card card-pad"><strong>好友申请</strong>'
       + (requests.length ? requests.map((r) => {
@@ -706,6 +736,31 @@ function modalUserProfile(m) {
   return modalShell(tf(user.name) + ' 的个人主页', body + foot);
 }
 
+function modalTeamInvite(m) {
+  const user = Store.currentUser();
+  const team = Store.load().teams.find((t) => t.id === m.id);
+  if (!team) return modalShell('邀请好友', '<div class="modal-body">队伍不存在</div>');
+  const friends = (user.friends || []).map((id) => Store.userById(id)).filter(Boolean);
+  const invites = Store.load().teamInvites || [];
+  const rows = friends.map((f) => {
+    const member = team.members.find((x) => x.userId === f.id);
+    const pendingInvite = invites.some((i) => i.teamId === team.id && i.toId === f.id && i.status === 'pending');
+    let right = '';
+    if (member && member.status === 'joined') right = '<span class="hint">已在队伍中</span>';
+    else if (member && member.status === 'removed') right = '<span class="hint">已被移出，不可邀请</span>';
+    else if (member && member.status === 'pending') right = '<span class="hint">已申请加入队伍</span>';
+    else if (pendingInvite) right = '<span class="hint">已邀请，等待对方回应</span>';
+    else right = '<button class="btn btn-sm btn-primary" data-action="team-invite" data-id="' + team.id + '" data-user="' + f.id + '">邀请</button>';
+    return '<div class="row-between" style="margin-bottom:8px"><div class="row">' + avatarHtml(f, 'avatar-sm')
+      + '<div><div>' + tf(f.name) + '</div><span class="hint">' + tf(f.major || '') + '</span></div></div>' + right + '</div>';
+  }).join('');
+  const bodyHtml = '<div class="modal-body">'
+    + '<p class="section-hint">' + tf(team.title) + ' ｜ 需要人数 ' + team.need + tu('人', team.need) + ' ｜ 已加入 ' + team.members.filter((x) => x.status === 'joined').length + tu('人', team.members.filter((x) => x.status === 'joined').length) + '</p>'
+    + (friends.length ? rows : '<p class="hint">你还没有好友，先去交流中心添加好友吧</p>')
+    + '</div>';
+  const foot = '<div class="modal-foot"><button class="btn" data-action="close-modal">关闭</button></div>';
+  return modalShell('邀请好友加入队伍', bodyHtml + foot);
+}
 function modalTeamManage(m) {
   const team = Store.load().teams.find((t) => t.id === m.id);
   if (!team) return modalShell('管理队伍', '<div class="modal-body">队伍不存在</div>');
@@ -726,7 +781,7 @@ function modalTeamManage(m) {
     + '<span class="hint">当前已加入 ' + joined.length + tu('人', joined.length) + ' ｜ 需 ≥ 该人数，最多 15 人</span></div></div>'
     + ((team.events && team.events.length) ? '<p class="section-hint" style="margin-top:14px">最近动态</p>'
       + team.events.map((ev) => '<div class="row-between" style="margin-bottom:6px"><div class="row">' + avatarHtml(Store.userById(ev.userId), 'avatar-sm')
-        + '<span>' + tf(ev.name) + (ev.kind === 'withdraw' ? ' 撤销了入队申请' : (ev.kind === 'removed' ? ' 被移出队伍' : ' 退出了队伍')) + '</span></div><span class="hint">' + esc(ev.createdAt) + '</span></div>').join('') : '')
+        + '<span>' + tf(ev.name) + (ev.kind === 'withdraw' ? ' 撤销了入队申请' : (ev.kind === 'removed' ? ' 被移出队伍' : (ev.kind === 'join' ? ' 接受了邀请加入队伍' : ' 退出了队伍'))) + '</span></div><span class="hint">' + esc(ev.createdAt) + '</span></div>').join('') : '')
     + '</div>';
   const foot = '<div class="modal-foot"><button class="btn" data-action="close-modal">关闭</button>'
     + '<button class="btn btn-primary" data-action="team-book" data-id="' + team.id + '"' + (joined.length < team.need || team.status === 'booked' ? ' disabled' : '') + '>提交预约</button></div>';
@@ -775,6 +830,7 @@ function renderModal() {
   else if (m.kind === 'report') root.innerHTML = tr(modalReport(m));
   else if (m.kind === 'notice-history') root.innerHTML = tr(modalNoticeHistory());
   else if (m.kind === 'user-profile') root.innerHTML = tr(modalUserProfile(m));
+  else if (m.kind === 'team-invite') root.innerHTML = tr(modalTeamInvite(m));
   else if (m.kind === 'password') root.innerHTML = tr(modalPassword(m));
 }
 
