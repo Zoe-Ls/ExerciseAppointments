@@ -716,6 +716,10 @@ function modalTeamManage(m) {
       + '<div class="row"><button class="btn btn-sm btn-primary" data-action="team-review" data-id="' + team.id + '" data-user="' + x.userId + '" data-approve="1">同意</button>'
       + '<button class="btn btn-sm" data-action="team-review" data-id="' + team.id + '" data-user="' + x.userId + '" data-approve="0">拒绝</button></div></div>').join('')
       : '<p class="hint">暂无待处理申请</p>')
+    + '<div class="field" style="margin-top:14px"><label>需要人数</label>'
+    + '<div class="row"><input id="team-need-input" type="number" min="' + joined.length + '" max="15" value="' + team.need + '" style="max-width:140px">'
+    + '<button class="btn btn-sm btn-primary" data-action="team-need-save" data-id="' + team.id + '">保存</button>'
+    + '<span class="hint">当前已加入 ' + joined.length + tu('人', joined.length) + ' ｜ 需 ≥ 该人数，最多 15 人</span></div></div>'
     + ((team.events && team.events.length) ? '<p class="section-hint" style="margin-top:14px">最近动态</p>'
       + team.events.map((ev) => '<div class="row-between" style="margin-bottom:6px"><div class="row">' + avatarHtml(Store.userById(ev.userId), 'avatar-sm')
         + '<span>' + tf(ev.name) + (ev.kind === 'withdraw' ? ' 撤销了入队申请' : ' 退出了队伍') + '</span></div><span class="hint">' + esc(ev.createdAt) + '</span></div>').join('') : '')

@@ -603,6 +603,24 @@ const Store = (function () {
     return { ok: true };
   }
 
+  function updateTeamNeed(teamId, need) {
+    const s = load();
+    const team = s.teams.find((t) => t.id === teamId);
+    if (!team) return { ok: false, message: '队伍不存在' };
+    if (isPastSlot(team.date, team.slot)) return { ok: false, message: '该组队活动时间已过，不能再操作' };
+    const user = currentUser();
+    if (!user || user.id !== team.userId) return { ok: false, message: '只有队长可以修改需要人数' };
+    if (team.status === 'booked') return { ok: false, message: '队伍已提交预约，需队长取消预约后才能修改' };
+    const joined = team.members.filter((m) => m.status === 'joined').length;
+    const value = Math.round(Number(need));
+    if (!value || value < 2) return { ok: false, message: '需要人数至少 2 人' };
+    if (value < joined) return { ok: false, message: '需要人数不能少于当前已加入人数' };
+    if (value > 15) return { ok: false, message: '需要人数最多 15 人' };
+    team.need = value;
+    team.status = joined >= value ? 'full' : (team.status === 'full' ? 'open' : team.status);
+    save();
+    return { ok: true, team: team };
+  }
   function leaveTeam(teamId) {
     const s = load();
     const user = currentUser();
@@ -730,7 +748,7 @@ const Store = (function () {
     sendFriendRequest: sendFriendRequest, respondFriendRequest: respondFriendRequest, friendStateWith: friendStateWith,
     removeFriend: removeFriend, blockFriend: blockFriend, unblockUser: unblockUser, hasBlocked: hasBlocked, isBlockedBy: isBlockedBy,
     teams: teams, createTeam: createTeam, applyTeam: applyTeam, reviewTeamMember: reviewTeamMember,
-    leaveTeam: leaveTeam,
+    leaveTeam: leaveTeam, updateTeamNeed: updateTeamNeed,
     teamsOfUserInMonth: teamsOfUserInMonth,
     confirmTeamBooking: confirmTeamBooking, notices: notices, publishNotice: publishNotice,
     deleteNotice: deleteNotice, stats: stats,

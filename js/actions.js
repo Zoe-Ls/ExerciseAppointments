@@ -222,6 +222,14 @@ const Actions = {
     renderApp();
   },
 
+  'team-need-save': function (el) {
+    const r = Store.updateTeamNeed(el.dataset.id, val('team-need-input'));
+    if (!r.ok) { toast(r.message, 'error'); return; }
+    toast('需要人数已更新');
+    renderApp();
+    renderModal();
+  },
+
   'open-notice-history': function () { ui.modal = { kind: 'notice-history' }; renderModal(); },
 
   'team-review': function (el) {
