@@ -565,7 +565,11 @@ const Store = (function () {
     if (isPastSlot(team.date, team.slot)) return { ok: false, message: '该组队活动时间已过，不能再操作' };
     if (team.userId === user.id) return { ok: false, message: '你是该队伍的发起人' };
     const exist = team.members.find((m) => m.userId === user.id);
-    if (exist) return { ok: false, message: exist.status === 'pending' ? '已提交申请，等待队长同意' : '你已在队伍中' };
+    if (exist) {
+      if (exist.status === 'pending') return { ok: false, message: '已提交申请，等待队长同意' };
+      if (exist.status === 'removed') return { ok: false, message: '你已被移出该队伍，不能再申请加入' };
+      return { ok: false, message: '你已在队伍中' };
+    }
     if (team.members.filter((m) => m.status === 'joined').length >= team.need) {
       return { ok: false, message: '队伍人数已满' };
     }
@@ -620,6 +624,27 @@ const Store = (function () {
     team.status = joined >= value ? 'full' : (team.status === 'full' ? 'open' : team.status);
     save();
     return { ok: true, team: team };
+  }
+  function removeTeamMember(teamId, userId) {
+    const s = load();
+    const team = s.teams.find((t) => t.id === teamId);
+    if (!team) return { ok: false, message: '队伍不存在' };
+    if (isPastSlot(team.date, team.slot)) return { ok: false, message: '该组队活动时间已过，不能再操作' };
+    const user = currentUser();
+    if (!user || user.id !== team.userId) return { ok: false, message: '只有队长可以移出队员' };
+    if (team.status === 'booked') return { ok: false, message: '队伍已提交预约，需队长取消预约后才能修改' };
+    if (userId === team.userId) return { ok: false, message: '不能移出队长自己' };
+    const member = team.members.find((m) => m.userId === userId);
+    if (!member) return { ok: false, message: '成员不存在' };
+    if (member.status !== 'joined') return { ok: false, message: '该成员不在队伍中' };
+    member.status = 'removed';
+    member.removedAt = nowStamp();
+    if (team.status === 'full') team.status = 'open';
+    team.events = [{ id: uid('e'), kind: 'removed', userId: userId, name: member.name, createdAt: nowStamp() }]
+      .concat(team.events || []).slice(0, 10);
+    bumpUnread(userId, 'teams');
+    save();
+    return { ok: true, message: '已将该队员移出队伍' };
   }
   function leaveTeam(teamId) {
     const s = load();
@@ -748,7 +773,7 @@ const Store = (function () {
     sendFriendRequest: sendFriendRequest, respondFriendRequest: respondFriendRequest, friendStateWith: friendStateWith,
     removeFriend: removeFriend, blockFriend: blockFriend, unblockUser: unblockUser, hasBlocked: hasBlocked, isBlockedBy: isBlockedBy,
     teams: teams, createTeam: createTeam, applyTeam: applyTeam, reviewTeamMember: reviewTeamMember,
-    leaveTeam: leaveTeam, updateTeamNeed: updateTeamNeed,
+    leaveTeam: leaveTeam, updateTeamNeed: updateTeamNeed, removeTeamMember: removeTeamMember,
     teamsOfUserInMonth: teamsOfUserInMonth,
     confirmTeamBooking: confirmTeamBooking, notices: notices, publishNotice: publishNotice,
     deleteNotice: deleteNotice, stats: stats,

@@ -266,7 +266,9 @@ function teamCard(team, user) {
     actions = '<button class="btn btn-sm btn-primary" data-action="open-team-manage" data-id="' + team.id + '">管理队伍' + (team.newApplications > 0 ? '<span class="dot-red" title="有新的入队申请"></span>' : '') + (pending.length ? '（' + pending.length + tu('条申请', pending.length) + '）' : '') + '</button>'
       + '<button class="btn btn-sm" data-action="team-book" data-id="' + team.id + '"' + (joined.length < team.need || team.status === 'booked' ? ' disabled' : '') + '>满员后提交预约</button>';
   } else if (mine) {
-    if (mine.status === 'pending') {
+    if (mine.status === 'removed') {
+      actions = '<span class="hint" style="color:#b23a2e">您已被移除队伍</span>';
+    } else if (mine.status === 'pending') {
       actions = '<span class="hint">已申请，等待队长同意</span>'
         + '<button class="btn btn-sm" data-action="team-leave" data-id="' + team.id + '">退出队伍</button>';
     } else if (team.status === 'booked') {
@@ -287,7 +289,7 @@ function teamCard(team, user) {
     + (team.contact ? '<span>联系方式：' + tf(team.contact) + '</span>' : '')
     + '<span class="muted">发布于 ' + esc(team.createdAt) + '</span></div>'
     + (team.note ? '<p class="hint">' + tf(team.note) + '</p>' : '')
-    + '<div class="team-members">' + team.members.map((m) => userLink(Store.userById(m.userId), '<span class="member-pill ' + (m.status === 'pending' ? 'pending' : '') + '">' + tf(m.name) + (m.status === 'pending' ? '（待同意）' : '') + '</span>')).join('') + '</div>'
+    + '<div class="team-members">' + team.members.filter((m) => m.status !== 'removed').map((m) => userLink(Store.userById(m.userId), '<span class="member-pill ' + (m.status === 'pending' ? 'pending' : '') + '">' + tf(m.name) + (m.status === 'pending' ? '（待同意）' : '') + '</span>')).join('') + '</div>'
     + '<div class="row" style="margin-top:12px">' + actions + '</div></div>';
 }
 
@@ -462,10 +464,12 @@ function viewMe() {
           const expired = isPastSlot(t.date, t.slot);
           const joined = t.members.filter((m) => m.status === 'joined');
           const mine = t.members.find((m) => m.userId === user.id);
-          const role = t.userId === user.id ? '发起人' : (mine && mine.status === 'joined' ? '已加入' : '待队长同意');
-          const statusText = expired ? badge('已过期', 'gray')
+          const removed = !!(mine && mine.status === 'removed');
+          const role = removed ? '—' : (t.userId === user.id ? '发起人' : (mine && mine.status === 'joined' ? '已加入' : '待队长同意'));
+          const statusText = removed ? badge('您已被移除队伍', 'red')
+            : (expired ? badge('已过期', 'gray')
             : (t.status === 'booked' ? badge('已提交预约', 'green')
-              : (joined.length >= t.need ? badge('人数已满', 'blue') : badge('招募中 ' + joined.length + '/' + t.need, 'amber')));
+              : (joined.length >= t.need ? badge('人数已满', 'blue') : badge('招募中 ' + joined.length + '/' + t.need, 'amber'))));
           return '<tr' + (expired ? ' class="is-expired"' : '') + '>'
             + '<td>' + tf(t.title) + '</td>'
             + '<td>' + VENUE_MAP[t.venueTypeId].icon + ' ' + venueLabel(t.venueTypeId, t.venueNo) + '</td>'
@@ -709,7 +713,7 @@ function modalTeamManage(m) {
   const pending = team.members.filter((x) => x.status === 'pending');
   const body = '<div class="modal-body">'
     + '<p class="section-hint">' + tf(team.title) + ' ｜ ' + venueLabel(team.venueTypeId, team.venueNo) + ' ｜ ' + dayLabel(team.date) + ' ' + slotLabel(team.slot) + '</p>'
-    + '<div class="team-members">' + joined.map((x) => '<span class="member-pill">' + tf(x.name) + '</span>').join('') + '</div>'
+    + '<div class="team-members">' + joined.map((x) => '<span class="member-pill">' + tf(x.name) + (x.userId === team.userId ? '' : ' <button class="link-btn" data-action="team-remove" data-id="' + team.id + '" data-user="' + x.userId + '">移出</button>') + '</span>').join('') + '</div>'
     + '<p class="section-hint" style="margin-top:14px">待同意的入队申请（' + pending.length + '）</p>'
     + (pending.length ? pending.map((x) => '<div class="row-between" style="margin-bottom:8px"><div class="row">' + avatarHtml(Store.userById(x.userId), 'avatar-sm')
       + '<div><div>' + tf(x.name) + '</div><span class="hint">' + tf(x.note || '申请加入队伍') + '</span></div></div>'
@@ -722,7 +726,7 @@ function modalTeamManage(m) {
     + '<span class="hint">当前已加入 ' + joined.length + tu('人', joined.length) + ' ｜ 需 ≥ 该人数，最多 15 人</span></div></div>'
     + ((team.events && team.events.length) ? '<p class="section-hint" style="margin-top:14px">最近动态</p>'
       + team.events.map((ev) => '<div class="row-between" style="margin-bottom:6px"><div class="row">' + avatarHtml(Store.userById(ev.userId), 'avatar-sm')
-        + '<span>' + tf(ev.name) + (ev.kind === 'withdraw' ? ' 撤销了入队申请' : ' 退出了队伍') + '</span></div><span class="hint">' + esc(ev.createdAt) + '</span></div>').join('') : '')
+        + '<span>' + tf(ev.name) + (ev.kind === 'withdraw' ? ' 撤销了入队申请' : (ev.kind === 'removed' ? ' 被移出队伍' : ' 退出了队伍')) + '</span></div><span class="hint">' + esc(ev.createdAt) + '</span></div>').join('') : '')
     + '</div>';
   const foot = '<div class="modal-foot"><button class="btn" data-action="close-modal">关闭</button>'
     + '<button class="btn btn-primary" data-action="team-book" data-id="' + team.id + '"' + (joined.length < team.need || team.status === 'booked' ? ' disabled' : '') + '>提交预约</button></div>';

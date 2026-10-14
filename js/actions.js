@@ -230,6 +230,15 @@ const Actions = {
     renderModal();
   },
 
+  'team-remove': function (el) {
+    if (!window.confirm('确定要将该队员移出队伍吗？移出后对方会收到通知。')) return;
+    const r = Store.removeTeamMember(el.dataset.id, el.dataset.user);
+    if (!r.ok) { toast(r.message, 'error'); return; }
+    toast(r.message || '已将该队员移出队伍');
+    renderApp();
+    renderModal();
+  },
+
   'open-notice-history': function () { ui.modal = { kind: 'notice-history' }; renderModal(); },
 
   'team-review': function (el) {
