@@ -267,8 +267,49 @@ const Actions = {
 
   'team-book': function (el) {
     const r = Store.confirmTeamBooking(el.dataset.id);
-    toast(r.ok ? (r.message || '已提交预约') : r.message, r.ok ? 'ok' : 'error');
-    if (r.ok) { closeModal(); renderApp(); }
+    if (r.ok) {
+      toast(r.message || '已提交预约');
+      closeModal();
+      renderApp();
+      return;
+    }
+    if (r.code === 'venue-taken' || r.code === 'no-venue') {
+      toast(r.message, 'error');
+      ui.modal = { kind: 'team-rebook', teamId: el.dataset.id, alternatives: r.alternatives || [], message: r.message };
+      renderModal();
+      return;
+    }
+    toast(r.message, 'error');
+  },
+
+  'team-rebook-venue': function (el) {
+    const m = ui.modal;
+    const up = Store.rebookTeam(m.teamId, { venueNo: el.dataset.no });
+    if (!up.ok) { toast(up.message, 'error'); return; }
+    const r = Store.confirmTeamBooking(m.teamId);
+    if (r.ok) { toast(r.message || '已提交预约'); closeModal(); renderApp(); return; }
+    if (r.code === 'venue-taken' || r.code === 'no-venue') {
+      ui.modal = { kind: 'team-rebook', teamId: m.teamId, alternatives: r.alternatives || [], message: r.message };
+      renderModal();
+      toast(r.message, 'error');
+      return;
+    }
+    toast(r.message, 'error');
+  },
+
+  'team-rebook-slot': function () {
+    const m = ui.modal;
+    const up = Store.rebookTeam(m.teamId, { date: val('rebook-date'), slot: val('rebook-slot') });
+    if (!up.ok) { toast(up.message, 'error'); return; }
+    const r = Store.confirmTeamBooking(m.teamId);
+    if (r.ok) { toast(r.message || '已提交预约'); closeModal(); renderApp(); return; }
+    if (r.code === 'venue-taken' || r.code === 'no-venue') {
+      ui.modal = { kind: 'team-rebook', teamId: m.teamId, alternatives: r.alternatives || [], message: r.message };
+      renderModal();
+      toast(r.message, 'error');
+      return;
+    }
+    toast(r.message, 'error');
   },
 
   'post-submit': function () {

@@ -761,6 +761,28 @@ function modalTeamInvite(m) {
   const foot = '<div class="modal-foot"><button class="btn" data-action="close-modal">关闭</button></div>';
   return modalShell('邀请好友加入队伍', bodyHtml + foot);
 }
+function modalTeamRebook(m) {
+  const team = Store.load().teams.find((t) => t.id === m.teamId);
+  if (!team) return modalShell('重新安排场地', '<div class="modal-body">队伍不存在</div>');
+  const type = VENUE_MAP[team.venueTypeId];
+  const bounds = monthBounds();
+  const slotOptions = TIME_SLOTS.map((s) => '<option value="' + s.id + '"' + (s.id === team.slot ? ' selected' : '') + '>' + s.label + '</option>').join('');
+  const alternatives = m.alternatives || [];
+  const body = '<div class="modal-body">'
+    + '<p class="section-hint">' + tf(team.title) + ' ｜ ' + venueLabel(team.venueTypeId, team.venueNo) + ' ｜ ' + dayLabel(team.date) + ' ' + slotLabel(team.slot) + '</p>'
+    + '<div class="banner banner-warn">' + esc(m.message || '该时间段该场地已经有人预约') + '</div>'
+    + (alternatives.length
+      ? '<p class="section-hint">同一时段还有这些空闲场地，点击即可直接提交预约：</p>'
+        + '<div class="row wrap" style="gap:8px">' + alternatives.map((no) => '<button class="btn btn-sm btn-primary" data-action="team-rebook-venue" data-no="' + no + '">' + esc(type.name) + ' ' + tc(type.prefix) + no + '</button>').join('') + '</div>'
+      : '<p class="section-hint">该时间段已无合适场地可预约，请更换时间段。</p>')
+    + '<div class="field-grid" style="margin-top:16px">'
+    + '<div class="field"><label>更换日期</label><input id="rebook-date" type="date" min="' + bounds.min + '" max="' + bounds.max + '" value="' + team.date + '"></div>'
+    + '<div class="field"><label>更换时段</label><select id="rebook-slot">' + slotOptions + '</select></div>'
+    + '</div></div>';
+  const foot = '<div class="modal-foot"><button class="btn" data-action="close-modal">取消</button>'
+    + '<button class="btn btn-primary" data-action="team-rebook-slot">更换时间段并提交预约</button></div>';
+  return modalShell('重新安排场地', body + foot);
+}
 function modalTeamManage(m) {
   const team = Store.load().teams.find((t) => t.id === m.id);
   if (!team) return modalShell('管理队伍', '<div class="modal-body">队伍不存在</div>');
@@ -831,6 +853,7 @@ function renderModal() {
   else if (m.kind === 'notice-history') root.innerHTML = tr(modalNoticeHistory());
   else if (m.kind === 'user-profile') root.innerHTML = tr(modalUserProfile(m));
   else if (m.kind === 'team-invite') root.innerHTML = tr(modalTeamInvite(m));
+  else if (m.kind === 'team-rebook') root.innerHTML = tr(modalTeamRebook(m));
   else if (m.kind === 'password') root.innerHTML = tr(modalPassword(m));
 }
 

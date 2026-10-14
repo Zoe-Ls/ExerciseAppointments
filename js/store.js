@@ -766,6 +766,29 @@ const Store = (function () {
     return { ok: true, message: '已退出队伍' };
   }
 
+  function availableVenuesAt(venueTypeId, date, slot) {
+    return VENUES.filter((v) => v.typeId === venueTypeId)
+      .filter((v) => slotStatus(venueTypeId, v.no, date, slot).state === 'free')
+      .map((v) => v.no);
+  }
+
+  function rebookTeam(teamId, patch) {
+    const s = load();
+    const team = s.teams.find((t) => t.id === teamId);
+    if (!team) return { ok: false, message: '队伍不存在' };
+    const user = currentUser();
+    if (!user || user.id !== team.userId) return { ok: false, message: '只有队长可以修改场地安排' };
+    if (team.status === 'booked') return { ok: false, message: '队伍已提交预约，无需修改' };
+    const date = patch && patch.date ? String(patch.date) : team.date;
+    const slot = patch && patch.slot ? Number(patch.slot) : team.slot;
+    const venueNo = patch && patch.venueNo ? String(patch.venueNo) : team.venueNo;
+    if (isPastSlot(date, slot)) return { ok: false, message: '不能选择已经过去的时间段' };
+    team.date = date;
+    team.slot = slot;
+    team.venueNo = venueNo;
+    save();
+    return { ok: true, team: team };
+  }
   function confirmTeamBooking(teamId) {
     const s = load();
     const team = s.teams.find((t) => t.id === teamId);
@@ -789,7 +812,15 @@ const Store = (function () {
   function createBookingForTeam(team, memberNames) {
     const s = load();
     const conflict = findActiveBooking(s, team.venueTypeId, team.venueNo, team.date, team.slot);
-    if (conflict) return { ok: false, message: '该时段已被预约，请重新组队另选时段' };
+    if (conflict) {
+      const alternatives = availableVenuesAt(team.venueTypeId, team.date, team.slot);
+      return {
+        ok: false,
+        code: alternatives.length ? 'venue-taken' : 'no-venue',
+        message: alternatives.length ? '该时间段该场地已经有人预约' : '该时间段已无合适场地可预约，请更换时间段',
+        alternatives: alternatives,
+      };
+    }
     const ownSlot = findUserSlotBooking(s, team.userId, team.date, team.slot, team.id);
     if (ownSlot) {
       return { ok: false, message: '队长在该时段已预约了其他场馆（' + slotConflictText(ownSlot) + '），需先取消该预约才能提交组队预约' };
@@ -864,6 +895,7 @@ const Store = (function () {
     removeFriend: removeFriend, blockFriend: blockFriend, unblockUser: unblockUser, hasBlocked: hasBlocked, isBlockedBy: isBlockedBy,
     teams: teams, createTeam: createTeam, applyTeam: applyTeam, reviewTeamMember: reviewTeamMember,
     leaveTeam: leaveTeam, updateTeamNeed: updateTeamNeed, removeTeamMember: removeTeamMember,
+    availableVenuesAt: availableVenuesAt, rebookTeam: rebookTeam,
     teamInvitesFor: teamInvitesFor, teamInviteHistory: teamInviteHistory, inviteFriendToTeam: inviteFriendToTeam, respondTeamInvite: respondTeamInvite,
     teamsOfUserInMonth: teamsOfUserInMonth,
     confirmTeamBooking: confirmTeamBooking, notices: notices, publishNotice: publishNotice,
