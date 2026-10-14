@@ -433,6 +433,23 @@ const Store = (function () {
     return { ok: true };
   }
 
+  function leaveTeam(teamId) {
+    const s = load();
+    const user = currentUser();
+    if (!user) return { ok: false, message: '请先登录' };
+    const team = s.teams.find((t) => t.id === teamId);
+    if (!team) return { ok: false, message: '队伍不存在' };
+    if (team.userId === user.id) return { ok: false, message: '你是该队伍的发起人，不能退出自己的队伍' };
+    const member = team.members.find((m) => m.userId === user.id);
+    if (!member) return { ok: false, message: '你不在该队伍中' };
+    if (member.status !== 'joined') return { ok: false, message: '入队申请尚未通过，暂时不能退出' };
+    if (team.status === 'booked') return { ok: false, message: '队伍已提交预约，需队长取消预约后才能退出' };
+    team.members = team.members.filter((m) => m.userId !== user.id);
+    if (team.status === 'full') team.status = 'open';
+    save();
+    return { ok: true, message: '已退出队伍' };
+  }
+
   function confirmTeamBooking(teamId) {
     const s = load();
     const team = s.teams.find((t) => t.id === teamId);
@@ -525,6 +542,7 @@ const Store = (function () {
     friendRequestsFor: friendRequestsFor, sentFriendRequests: sentFriendRequests, isFriend: isFriend,
     sendFriendRequest: sendFriendRequest, respondFriendRequest: respondFriendRequest,
     teams: teams, createTeam: createTeam, applyTeam: applyTeam, reviewTeamMember: reviewTeamMember,
+    leaveTeam: leaveTeam,
     confirmTeamBooking: confirmTeamBooking, notices: notices, publishNotice: publishNotice,
     deleteNotice: deleteNotice, stats: stats,
   };

@@ -251,7 +251,14 @@ function teamCard(team, user) {
     actions = '<button class="btn btn-sm btn-primary" data-action="open-team-manage" data-id="' + team.id + '">管理队伍' + (pending.length ? '（' + pending.length + ' 条申请）' : '') + '</button>'
       + '<button class="btn btn-sm" data-action="team-book" data-id="' + team.id + '"' + (joined.length < team.need || team.status === 'booked' ? ' disabled' : '') + '>满员后提交预约</button>';
   } else if (mine) {
-    actions = '<button class="btn btn-sm" disabled>' + (mine.status === 'pending' ? '已申请，等待队长同意' : '已加入该队') + '</button>';
+    if (mine.status === 'pending') {
+      actions = '<button class="btn btn-sm" disabled>已申请，等待队长同意</button>';
+    } else if (team.status === 'booked') {
+      actions = '<span class="hint">你已加入该队 · 队伍已提交预约，暂时不能退出</span>';
+    } else {
+      actions = '<span class="hint">你已加入该队</span>'
+        + '<button class="btn btn-sm" data-action="team-leave" data-id="' + team.id + '">退出队伍</button>';
+    }
   } else {
     actions = '<button class="btn btn-sm btn-primary" data-action="team-apply" data-id="' + team.id + '">申请加入</button>';
   }

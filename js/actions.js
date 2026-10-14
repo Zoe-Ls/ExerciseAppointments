@@ -197,6 +197,13 @@ const Actions = {
 
   'open-team-manage': function (el) { ui.modal = { kind: 'team-manage', id: el.dataset.id }; renderModal(); },
 
+  'team-leave': function (el) {
+    const r = Store.leaveTeam(el.dataset.id);
+    if (!r.ok) { toast(r.message, 'error'); return; }
+    toast(r.message || '已退出队伍');
+    renderApp();
+  },
+
   'open-notice-history': function () { ui.modal = { kind: 'notice-history' }; renderModal(); },
 
   'team-review': function (el) {
