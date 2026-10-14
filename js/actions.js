@@ -197,6 +197,8 @@ const Actions = {
 
   'open-team-manage': function (el) { ui.modal = { kind: 'team-manage', id: el.dataset.id }; renderModal(); },
 
+  'open-notice-history': function () { ui.modal = { kind: 'notice-history' }; renderModal(); },
+
   'team-review': function (el) {
     const r = Store.reviewTeamMember(el.dataset.id, el.dataset.user, el.dataset.approve === '1');
     if (!r.ok) { toast(r.message, 'error'); return; }

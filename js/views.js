@@ -331,14 +331,23 @@ function postCard(post, user) {
     + '<button class="btn btn-sm btn-primary" data-action="comment" data-id="' + post.id + '"' + (canPost ? '' : ' disabled') + '>评论</button></div></div>';
 }
 
+const NOTICE_PIN_LIMIT = 3;
+
+function noticeItemHtml(n) {
+  return '<div class="notice-item"><span class="notice-tag">通知</span><div><strong>' + esc(n.title) + '</strong><p class="hint">' + esc(n.content) + '</p><p class="hint">' + esc(n.createdAt) + ' · ' + esc(n.by) + '</p></div></div>';
+}
+
 function viewForum() {
   const user = Store.currentUser();
   const notices = Store.notices();
+  const pinned = notices.slice(0, NOTICE_PIN_LIMIT);
+  const history = notices.slice(NOTICE_PIN_LIMIT);
   const posts = Store.posts().slice().sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
   const canPost = Store.canPost(user);
   const noticeBar = notices.length
-    ? '<div class="card notice-bar"><div class="row" style="gap:8px;margin-bottom:4px"><strong>📢 场馆通知</strong><span class="hint">（管理员发布）</span></div>'
-      + notices.map((n) => '<div class="notice-item"><span class="notice-tag">通知</span><div><strong>' + esc(n.title) + '</strong><p class="hint">' + esc(n.content) + '</p><p class="hint">' + esc(n.createdAt) + ' · ' + esc(n.by) + '</p></div></div>').join('')
+    ? '<div class="card notice-bar"><div class="row" style="gap:8px;margin-bottom:4px"><strong>📢 场馆通知</strong><span class="hint">（管理员发布）</span>'
+      + '<button class="link-btn" style="margin-left:auto" data-action="open-notice-history">历史通知' + (history.length ? '（' + history.length + '）' : '') + '</button></div>'
+      + pinned.map(noticeItemHtml).join('')
       + '</div>'
     : '<div class="card card-pad empty">暂无管理员通知</div>';
   const composer = '<div class="card card-pad"><div class="row-between" style="margin-bottom:8px"><strong>发布新帖子</strong><span class="hint">' + (canPost ? '可以分享约球、组队、场馆信息' : '当前账号无法发帖') + '</span></div>'
@@ -607,6 +616,16 @@ function modalReport(m) {
   return modalShell('举报内容', body + foot);
 }
 
+function modalNoticeHistory() {
+  const history = Store.notices().slice(NOTICE_PIN_LIMIT);
+  const body = '<div class="modal-body">'
+    + '<p class="section-hint">更早发布的通知会收进这里；最新的 ' + NOTICE_PIN_LIMIT + ' 条始终显示在交流中心顶部。</p>'
+    + (history.length ? history.map(noticeItemHtml).join('') : '<p class="hint">暂无历史通知</p>')
+    + '</div>';
+  const foot = '<div class="modal-foot"><button class="btn" data-action="close-modal">关闭</button></div>';
+  return modalShell('历史通知', body + foot);
+}
+
 function modalPassword(m) {
   const body = '<div class="modal-body">'
     + '<p class="section-hint">超级管理员首次登录必须修改初始密码，修改后才能进入管理后台。</p>'
@@ -627,6 +646,7 @@ function renderModal() {
   else if (m.kind === 'team-create') root.innerHTML = modalTeamCreate(m);
   else if (m.kind === 'team-manage') root.innerHTML = modalTeamManage(m);
   else if (m.kind === 'report') root.innerHTML = modalReport(m);
+  else if (m.kind === 'notice-history') root.innerHTML = modalNoticeHistory();
   else if (m.kind === 'password') root.innerHTML = modalPassword(m);
 }
 
