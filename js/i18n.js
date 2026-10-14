@@ -1,0 +1,613 @@
+const LANG_STORE_KEY = 'hzau_lang';
+
+const I18N_DICT = {
+  '场馆预约': 'Venue Booking',
+  '组队模块': 'Team Up',
+  '组队': 'Teams',
+  '交流中心帖子': 'Forum posts',
+  '交流中心': 'Forum',
+  '个人主页': 'Profile',
+  '管理后台': 'Admin Console',
+  '校园运动场馆预约系统': 'Campus Sports Venue Booking',
+  '原型 v1': 'Prototype v1',
+  '原型版本': 'Prototype',
+  '退出': 'Sign out',
+  ' · 管理员': ' · Admin',
+  '华中农业大学校徽': 'HZAU logo',
+  '华中农业大学': 'Huazhong Agricultural University',
+  '学生 · ': 'Student · ',
+  '管理员 admin（初始密码）': 'Admin: admin (initial password)',
+  '微信 ': 'WeChat ',
+  '时段冲突：你已预约 ': 'Time conflict: you booked ',
+  '系统管理员': 'System admin',
+  '勤读力耕 · 立己达人': 'Diligence in study, devotion in practice',
+
+  '选择场馆类型与日期，绿色图标表示该时段可以预约': 'Pick a venue type and date; green cells are available',
+  '人数不足时，可以发布组队消息邀请其他同学加入，队长同意后即可组队预约': 'Post a team-up message, others apply, the captain approves, then you book the court',
+  '约球帖、经验分享、场馆通知都在这里': 'Find teammates, tips and venue notices here',
+  '完善资料，方便同学找到你一起运动': 'Complete your profile so others can find you',
+  '审核预约、处理举报、发布通知': 'Review bookings, handle reports, publish notices',
+  '重置演示数据': 'Reset demo data',
+
+  '学生登录': 'Student login',
+  '注册账号': 'Register',
+  '管理员登录': 'Admin login',
+  '学号': 'Student ID',
+  '密码': 'Password',
+  '管理员账号': 'Admin account',
+  '管理员密码': 'Admin password',
+  '登录': 'Sign in',
+  '注册并登录': 'Register and sign in',
+  '进入管理后台': 'Enter admin console',
+  '演示账号（点击自动填入）': 'Demo accounts (click to fill)',
+  '填入': 'Fill',
+  '还没有账号？': 'No account yet? ',
+  '立即注册': 'Register now',
+  '已有账号？': 'Already registered? ',
+  '返回登录': 'Back to sign in',
+  '请输入学号，例如 20213001': 'Enter your student ID, e.g. 20213001',
+  '请输入密码': 'Enter your password',
+  '请输入真实姓名': 'Enter your real name',
+  '请输入管理员账号': 'Enter the admin account',
+  '请输入管理员密码': 'Enter the admin password',
+  '校园场馆': 'Campus Venues',
+  '一键预约': 'Book in one tap',
+  '羽毛球 · 排球 · 乒乓球 · 网球 · 游泳': 'Badminton · Volleyball · Table Tennis · Tennis · Swimming',
+  '20 片羽毛球馆（东体育馆 3楼）｜ 36 张乒乓球台（东体育馆 1楼）': '20 badminton courts (East Gym 3F) | 36 table tennis tables (East Gym 1F)',
+  '排球：老场 8 片（第二运动场）· 新场 6 片（第三运动场）· 室内 1 片（西体育馆）': 'Volleyball: 8 old courts (Field 2) · 6 new courts (Field 3) · 1 indoor (West Gym)',
+  '室内网球馆 3 片（东体育馆 2楼）· 室外网球场 4 片': '3 indoor tennis courts (East Gym 2F) · 4 outdoor tennis courts',
+  '游泳馆（东体育馆）男女各 1 个': 'Swimming pool (East Gym): 1 male, 1 female',
+  '开放时间 08:00 - 22:00，每小时一个时段，仅可预约本月日期': 'Open 08:00 - 22:00, hourly slots, current month only',
+  '超级管理员账号由系统初始化脚本自动创建，首次登录需修改密码。': 'The super admin account is created by the init script; first sign-in requires a password change.',
+  '超级管理员首次登录必须修改初始密码，修改后才能进入管理后台。': 'Super admin must change the initial password before entering the admin console.',
+  '两次输入的密码不一致': 'The two passwords do not match',
+  '新密码（至少 6 位）': 'New password (at least 6 characters)',
+  '确认新密码': 'Confirm new password',
+  '保存并进入后台': 'Save and enter console',
+  '修改管理员密码': 'Change admin password',
+  '密码至少 6 位': 'Password must be at least 6 characters',
+  '新密码至少 6 位': 'New password must be at least 6 characters',
+  '新密码不能与当前密码相同': 'The new password must differ from the current one',
+  '学号需为 6-20 位数字': 'Student ID must be 6-20 digits',
+  '首次登录需先修改密码': 'Please change the initial password first',
+  '密码修改成功': 'Password updated',
+  '管理员登录成功，请及时修改初始密码': 'Admin signed in - please change the initial password',
+  '超级管理员账号在系统初始化时自动创建（admin / admin123），首次登录': 'The super admin account is created at init (admin / admin123); first sign-in',
+  '普通用户使用学号': 'Students sign in with student ID',
+  '密码登录，管理员使用管理员账号': 'and password; admins use the admin account',
+  '密码登录。': 'and password.',
+  '需修改密码。': ' requires a password change.',
+  '每小时一个时段，仅可预约本月内日期。': 'hourly slots, current month only.',
+  '每小时一个时段，仅可预约本月日期': 'hourly slots, current month only',
+  '数据保存在浏览器本地，可在页面底部重置。': 'Data is stored locally in your browser and can be reset at the bottom.',
+
+  '活动日期': 'Activity date',
+  '预约日期': 'Date',
+  '今天': 'Today',
+  '明天': 'Tomorrow',
+  '后天': 'Day after tomorrow',
+  '清除筛选': 'Clear filters',
+  '我的组队': 'My teams',
+  '只看我的组队': 'my teams only',
+  '默认显示全部组队活动，共': 'All team posts, ',
+  '支队伍': ' teams',
+  '可预约': 'Available',
+  '我的预约': 'My booking',
+  '待审核': 'Pending review',
+  '已预约': 'Booked',
+  '已过期': 'Expired',
+  '时段冲突': 'Time conflict',
+  '时段冲突（你已约其他场馆）': 'Conflict (booked elsewhere)',
+  '可约': 'Free',
+  '已约': 'Taken',
+  '待审': 'Pending',
+  '我的': 'Mine',
+  '冲突': 'Conflict',
+  '已约 / 待审': 'Taken / Pending',
+  '场地': 'Court',
+  '时段': 'Slot',
+  '状态': 'Status',
+  '操作': 'Action',
+  '申请人': 'Applicant',
+  '日期 / 时段': 'Date / Slot',
+  '预约理由': 'Reason',
+  '同行成员': 'Members',
+  '我的身份': 'My role',
+  '组队标题': 'Team title',
+  '需要人数': 'Players needed',
+  '发起人': 'Captain',
+  '发起人：': 'Captain: ',
+  '需要人数：': 'Players needed: ',
+  '已加入：': 'Joined: ',
+  '联系方式：': 'Contact: ',
+  '发布于': 'Posted',
+  '预约 ': 'Bookings ',
+  '好友 ': 'Friends ',
+  '帖子 ': 'Posts ',
+
+  '预约场地': 'Book a court',
+  '预约理由（必填）': 'Reason (required)',
+  '同行成员（选填，不限人数）': 'Players (optional, no limit)',
+  '取消': 'Cancel',
+  '取消预约': 'Cancel booking',
+  '改为组队': 'Team up instead',
+  '提交预约': 'Submit booking',
+  '关闭': 'Close',
+  '返回': 'Back',
+  '删除': 'Delete',
+  '发布': 'Publish',
+  '提交': 'Submit',
+  '直接预约，无需选择预约模式，人数不限': 'Book directly - no mode to choose, no limit on players',
+  '直接预约，人数不限，需填写预约理由': 'Direct booking, no player limit, a reason is required',
+  '仅显示': 'Showing ',
+  '当天的组队活动，共': ' team posts, ',
+  '默认显示全部组队活动，共': 'All team posts, ',
+  '管理员审核时会看到预约理由，请写清用途；同行成员仅作记录，不限制人数。': 'Admins will see the reason - please be specific. Players are for reference only.',
+  '管理员已通过': 'Approved by admin',
+  '已被拒绝': 'Rejected',
+  '等待管理员审核': 'Waiting for admin review',
+  '提交时间': 'Submitted at',
+  '我的预约详情': 'My booking detail',
+  '预约详情': 'Booking detail',
+  '该预约不存在或已取消': 'This booking no longer exists',
+
+  '创建队伍': 'Create a team',
+  '队伍标题': 'Team title',
+  '场馆': 'Venue',
+  '场号': 'Court no.',
+  '日期': 'Date',
+  '联系方式': 'Contact',
+  '说明': 'Notes',
+  '发布组队消息': 'Post team-up message',
+  '管理队伍': 'Manage team',
+  '满员后提交预约': 'Submit when full',
+  '申请加入': 'Join',
+  '退出队伍': 'Leave team',
+  '你已加入该队': 'You joined this team',
+  '你已加入该队 · 队伍已提交预约，暂时不能退出': 'You joined this team · booking submitted, cannot leave yet',
+  '已申请，等待队长同意': 'Applied, waiting for the captain',
+  '待队长同意': 'Waiting for captain',
+  '（待同意）': ' (pending)',
+  ' 当天': '',
+  '原型版本': '',
+  '已加入': 'Joined',
+  '招募中': 'Recruiting',
+  '人数已满': 'Full',
+  '已提交预约': 'Booking submitted',
+  '组队流程：发布组队消息': 'How it works: post a team-up message',
+  '暂无组队消息，点击右上角创建第一支队伍吧': 'No team posts yet. Create the first one from the top right.',
+  '待同意的入队申请（': 'Pending applications (',
+  '暂无待处理申请': 'No pending applications',
+  '活动时间已过，不能再申请、管理或退出': 'This activity has passed - no actions available',
+  '你还没有发起或加入任何组队，点击右上角创建一支吧': 'You have not joined any team yet. Create one from the top right.',
+  '本月还没有组队记录，去组队模块发布或加入一支队伍吧': 'No team records this month. Post or join one in Teams.',
+  '当天没有组队活动，换个日期试试': ' has no team posts - try another date',
+  '当天你没有参与任何组队活动': ' has no team activity for you',
+
+  '发布新帖子': 'New post',
+  '可以分享约球、组队、场馆信息': 'Share games, team-ups or venue info',
+  '当前账号无法发帖': 'This account cannot post',
+  '当前账号无法发布内容': 'This account cannot post',
+  '当前账号无法评论': 'This account cannot comment',
+  '当前账号无法添加好友': 'This account cannot add friends',
+  '写下你的评论…': 'Write a comment...',
+  '评论': 'Comment',
+  '点赞': 'Like',
+  '收藏': 'Save',
+  '举报': 'Report',
+  '加好友': 'Add friend',
+  '场馆通知': 'Venue notices',
+  '（管理员发布）': '(posted by admin)',
+  '历史通知': 'Notice history',
+  '暂无管理员通知': 'No notices yet',
+  '更早发布的通知会收进这里；最新的 3 条始终显示在交流中心顶部。': 'Older notices are archived here; the latest 3 stay pinned in the Forum.',
+  '暂无历史通知': 'No older notices',
+  '公告会置顶显示，帖子支持点赞、评论、收藏、举报': 'Notices are pinned; posts support like, comment, save and report',
+  '还没有帖子，快来发布第一条吧': 'No posts yet - be the first!',
+  '通知': 'Notice',
+  '举报内容': 'Report content',
+  '举报理由': 'Report reason',
+  '提交举报': 'Submit report',
+  '举报对象：': 'Reporting: ',
+  ' 的帖子': ' · post',
+  ' 的评论': ' · comment',
+  '管理员核实后，可对违规用户进行警告、禁止发帖或封禁账号处理。': 'After review, the admin may warn, mute or ban the user.',
+  '请说明举报原因，例如：广告推广、人身攻击、不实信息': 'Explain the reason, e.g. spam, harassment, false info',
+
+  '我的好友': 'My friends',
+  '我的帖子': 'My posts',
+  '我的收藏': 'My saved',
+  '保存资料': 'Save profile',
+  '姓名': 'Name',
+  '性别': 'Gender',
+  '年龄': 'Age',
+  '年级': 'Grade',
+  '专业': 'Major',
+  '班级': 'Class',
+  '爱好': 'Hobbies',
+  '个人介绍': 'About me',
+  '提示：可上传本地图片作为头像，资料会保存在浏览器本地。': 'Tip: upload a local image as your avatar. Profile data is stored in your browser.',
+  '上传头像': 'Upload avatar',
+  '学号：': 'Student ID: ',
+  '注册时间：': 'Registered: ',
+  '好友': 'Friends',
+  '还没有预约记录，去场馆预约看看吧': 'No bookings yet - go book a court',
+  '还没有发布过帖子': 'No posts yet',
+  '还没有收藏的帖子': 'No saved posts yet',
+  '好友申请': 'Friend requests',
+  '暂无待处理的好友申请': 'No pending friend requests',
+  '我的好友（': 'My friends (',
+  '还没有好友，去交流中心加好友吧': 'No friends yet - add some in the Forum',
+  '申请加你为好友': ' wants to add you as a friend',
+  '同意': 'Accept',
+  '拒绝': 'Reject',
+  '正常': 'Normal',
+  '已封禁': 'Banned',
+  '禁止发帖': 'Muted',
+  '已通过': 'Approved',
+  '已拒绝': 'Rejected',
+  '发起人：': 'Captain: ',
+  '成员：': 'Members: ',
+
+  '预约审核': 'Booking review',
+  '待审核预约（': 'Pending bookings (',
+  '暂无待审核预约 🎉': 'No pending bookings 🎉',
+  '最近处理记录': 'Recent decisions',
+  '暂无记录': 'No records',
+  '举报处理': 'Reports',
+  '通知发布': 'Notices',
+  '数据概览': 'Overview',
+  '用户举报（待处理': 'User reports (open: ',
+  '暂无举报记录': 'No reports',
+  '驳回举报': 'Dismiss',
+  '警告用户': 'Warn user',
+  '删除帖子': 'Delete post',
+  '封禁账号': 'Ban account',
+  '解除限制': 'Unmute',
+  '待处理': 'Open',
+  '已处理': 'Resolved',
+  '被举报内容：': 'Reported: ',
+  '举报人：': 'Reporter: ',
+  '理由：': 'Reason: ',
+  '内容摘要：': 'Excerpt: ',
+  '说明：封禁账号后用户仍可正常预约场馆，但不能发帖、评论和添加好友。': 'Note: banned users can still book courts, but cannot post, comment or add friends.',
+  '通知标题': 'Notice title',
+  '通知内容': 'Notice content',
+  '发布通知': 'Publish notice',
+  '已发布通知（': 'Published notices (',
+  '例如：': 'e.g. ',
+  '例如 03': 'e.g. 03',
+  '例如：院队训练 / 和同学约球 / 班级活动': 'e.g. team practice / playing with classmates / class activity',
+  '例如：水平不限，有球': 'e.g. all levels welcome, we have shuttles',
+  '微信号 / 手机号': 'WeChat ID / phone number',
+  '帖子': 'post',
+  '评论': 'comment',
+  '💬 评论 ': '💬 Comments ',
+  '>评论<': '>Comment<',
+  '待审核预约': 'Pending bookings',
+  '仅 ': 'Only ',
+  '暂无通知': 'No notices',
+  '通知会显示在交流中心顶部。': 'Notices are pinned in the Forum.',
+  '各场馆预约热度': 'Bookings by venue',
+  '系统说明': 'About',
+  '有效预约总数': 'Active bookings',
+  '注册学生': 'Students',
+  '组队消息': 'Team posts',
+  '待处理举报': 'Open reports',
+  '结果': 'Result',
+  '通过': 'Approve',
+  '页面渲染出错': 'Render error',
+  '可尝试点击下方按钮重置演示数据后重新登录。': 'Try resetting the demo data below, then sign in again.',
+  '重置演示数据': 'Reset demo data',
+
+  '羽毛球馆': 'Badminton Hall',
+  '排球老场': 'Volleyball Old Courts',
+  '排球新场': 'Volleyball New Courts',
+  '排球室内场': 'Indoor Volleyball',
+  '乒乓球馆': 'Table Tennis Hall',
+  '室内网球馆': 'Indoor Tennis',
+  '室外网球场': 'Outdoor Tennis',
+  '游泳馆（男）': 'Swimming Pool (Male)',
+  '游泳馆（女）': 'Swimming Pool (Female)',
+  '东体育馆 3楼': 'East Gym 3F',
+  '东体育馆 2楼': 'East Gym 2F',
+  '东体育馆 1楼': 'East Gym 1F',
+  '东体育馆 游泳馆': 'East Gym Pool',
+  '东体育馆游泳馆': 'East Gym Pool',
+  '东体育馆': 'East Gym',
+  '第二运动场': 'Field 2',
+  '第三运动场': 'Field 3',
+  '西体育馆': 'West Gym',
+  '室外场地': 'Outdoor',
+
+  '国庆假期场馆开放安排': 'National Day holiday opening hours',
+  '10月1日-3日东体育馆闭馆检修，其余时间正常开放 08:00-22:00。': 'East Gym is closed for maintenance on Oct 1-3; open 08:00-22:00 on other days.',
+  '羽毛球馆新增 4 片场地': '4 new badminton courts added',
+  '东体育馆 3楼新增 4 片羽毛球场地，已在预约系统中开放，欢迎大家预约使用。': '4 new badminton courts on East Gym 3F are now bookable.',
+  '排球新场（第三运动场）周末下午有人一起打吗？想组个 12 人的局。': 'Anyone up for volleyball at Field 3 this weekend afternoon? Looking for a 12-player game.',
+  '我报名！可以约下午 4 点。': 'Count me in! 4 pm works.',
+  '乒乓球馆 1 楼晚上人不多，推荐大家错峰来打球。': 'The table tennis hall on 1F is quiet in the evening - come off-peak.',
+  '收到，明晚去看看～': 'Got it, I will drop by tomorrow evening.',
+  '排球新场 明天下午 15:00 缺 3 人': 'Volleyball New Courts tomorrow 15:00 - need 3 more',
+  '羽毛球双打，东体育馆 3 楼，缺 2 人': 'Badminton doubles, East Gym 3F - need 2 more',
+  '水平不限，欢迎新手，有球。': 'All levels welcome, beginners included, we have shuttles.',
+  '已经有 2 人，缺 2 人凑双打。': '2 players so far, need 2 more for doubles.',
+  '篮球、羽毛球、编程': 'Basketball, badminton, coding',
+  '喜欢打球，也喜欢写代码，欢迎一起组队！': 'I love sports and coding - team up with me!',
+  '排球、游泳、摄影': 'Volleyball, swimming, photography',
+  '院排球队队员，常在三运打球～': 'College volleyball team member, often at Field 3.',
+  '乒乓球、跑步': 'Table tennis, running',
+  '乒乓球馆常客，约球找我。': 'A regular at the table tennis hall - ping me for a game.',
+  '网球、游泳、阅读': 'Tennis, swimming, reading',
+  '想找固定球友一起打球。': 'Looking for regular hitting partners.',
+  '校园运动场馆预约系统超级管理员': 'Super admin of the campus sports booking system',
+  '计算机科学与技术': 'Computer Science',
+  '园艺学': 'Horticulture',
+  '机械设计制造及其自动化': 'Mechanical Engineering',
+  '外国语学院英语': 'English, Foreign Languages College',
+  '计科2101班': 'CS 2101',
+  '园艺2102班': 'Horticulture 2102',
+  '机械2003班': 'Mechanical 2003',
+  '英语2101班': 'English 2101',
+  '2021级': 'Class of 2021',
+  '2020级': 'Class of 2020',
+  '晚上和室友打双打': 'Doubles with my roommates in the evening',
+  '院羽毛球队训练': 'College badminton team practice',
+  '乒乓球课课后练习': 'Table tennis practice after class',
+  '和同学约球': 'Playing with classmates',
+  '日常游泳锻炼': 'Regular swimming workout',
+  '日常约球': 'Casual game',
+  '院队训练': 'Team practice',
+  '班级活动': 'Class activity',
+  '朋友聚会打球': 'Playing with friends',
+  '体育课练习': 'PE class practice',
+  '社团活动': 'Club activity',
+  '昨天傍晚练球': 'Practice yesterday evening',
+  '昨天的院队训练': 'Team practice yesterday',
+  '由组队生成': 'Created from a team-up',
+  '组队预约：': 'Team booking: ',
+  '组队打球': 'Team game',
+  '请先登录': 'Please sign in first',
+  '队伍不存在': 'Team not found',
+  '预约不存在': 'Booking not found',
+  '帖子不存在': 'Post not found',
+  '申请不存在': 'Request not found',
+  '成员不存在': 'Member not found',
+  '举报记录不存在': 'Report not found',
+  '场地类型不存在': 'Venue type not found',
+  '该时段已被预约，请选择其他时段': 'That slot is already booked - pick another',
+  '该组队活动时间已过，不能再操作': 'This team activity has passed - no actions available',
+  '该预约的活动时间已过，不能再审核': 'This booking has passed and can no longer be reviewed',
+  '该时段已被预约，请重新组队另选时段': 'That slot is already booked - pick another slot for the team',
+  '该学号尚未注册，请先注册账号': 'This student ID is not registered yet',
+  '该学号已注册，请直接登录': 'This student ID is already registered - please sign in',
+  '账号或密码错误': 'Wrong account or password',
+  '密码错误，请重新输入': 'Wrong password, please try again',
+  '管理员账号不存在': 'Admin account not found',
+  '管理员密码错误': 'Wrong admin password',
+  '请输入学号和密码': 'Enter your student ID and password',
+  '请输入管理员账号和密码': 'Enter the admin account and password',
+  '请填写姓名': 'Please enter your name',
+  '请填写预约理由': 'Please enter a reason',
+  '请填写队伍标题': 'Please enter a team title',
+  '请填写通知标题和内容': 'Please fill in the notice title and content',
+  '请填写举报理由': 'Please enter the report reason',
+  '请输入帖子内容': 'Please enter the post content',
+  '请输入评论内容': 'Please enter a comment',
+  '请输入通知内容': 'Please enter the notice content',
+  '请选择场馆类型': 'Please choose a venue type',
+  '需要人数至少 2 人': 'At least 2 players required',
+  '只能预约本月内日期': 'Only dates in the current month can be booked',
+  '只能取消自己的预约': 'You can only cancel your own booking',
+  '只有队长可以提交预约': 'Only the captain can submit the booking',
+  '你是该队伍的发起人': 'You are the captain of this team',
+  '你是该队伍的发起人，不能退出自己的队伍': 'You are the captain - you cannot leave your own team',
+  '你不在该队伍中': 'You are not in this team',
+  '你已在队伍中': 'You are already in this team',
+  '你们已经是好友了': 'You are already friends',
+  '不能添加自己为好友': 'You cannot add yourself as a friend',
+  '已提交申请，等待队长同意': 'Application submitted - waiting for the captain',
+  '入队申请尚未通过，暂时不能退出': 'Your request is not approved yet, so you cannot leave',
+  '入队申请已发送': 'Join request sent',
+  '入队申请已发送，等待队长同意': 'Join request sent - waiting for the captain',
+  '已发送过好友申请，等待对方同意': 'Friend request already sent',
+  '你已举报过该内容，管理员正在处理': 'You already reported this content',
+  '该同学在该时段已预约其他场馆（': 'This student booked another venue in that slot (',
+  '队长在该时段已预约了其他场馆（': 'The captain booked another venue in that slot (',
+  '你在该时段已预约了其他场馆（': 'You booked another venue in that slot (',
+  '需先取消该预约才能预约此处': 'cancel it first to book here',
+  '需先取消该预约才能发起组队': 'cancel it first to start a team',
+  '需先取消该预约才能加入队伍': 'cancel it first to join a team',
+  '需先取消该预约才能提交组队预约': 'cancel it first to submit the team booking',
+  '需其先取消后才能同意入队': 'they must cancel it before you can approve',
+  '队伍人数未满（': 'Team is not full (',
+  '暂不能预约场地': ') - cannot book the court yet',
+  '队伍已提交预约，需队长取消预约后才能退出': 'The booking was submitted - the captain must cancel it first',
+  '当前账号无法发帖': 'This account cannot post',
+  '操作失败': 'Action failed',
+  '处理完成': 'Done',
+  '发布成功': 'Published',
+  '组队消息已发布': 'Team post published',
+  '通知已发布，将在交流中心顶部显示': 'Notice published - pinned at the top of the Forum',
+  '通知已删除': 'Notice deleted',
+  '举报已提交，管理员会尽快处理': 'Report submitted - the admin will review it soon',
+  '预约已提交，等待管理员审核': 'Booking submitted - waiting for admin review',
+  '已提交预约，等待管理员审核': 'Booking submitted - waiting for admin review',
+  '已取消预约': 'Booking cancelled',
+  '已退出队伍': 'You left the team',
+  '已退出登录': 'Signed out',
+  '好友申请已发送': 'Friend request sent',
+  '已同意好友申请': 'Friend request accepted',
+  '已拒绝好友申请': 'Friend request declined',
+  '已同意入队申请': 'Join request approved',
+  '已拒绝入队申请': 'Join request declined',
+  '已通过该预约': 'Booking approved',
+  '已拒绝该预约': 'Booking rejected',
+  '已驳回举报': 'Report dismissed',
+  '已警告该用户': 'User warned',
+  '已禁止该用户发帖': 'User muted',
+  '已封禁该账号': 'Account banned',
+  '已解除限制': 'Restriction lifted',
+  '已删除违规帖子': 'Violating post deleted',
+  '资料已保存': 'Profile saved',
+  '头像已更新': 'Avatar updated',
+  '演示数据已重置': 'Demo data reset',
+  '注册成功，请完善个人资料': 'Registered - please complete your profile',
+  '仅管理员可访问管理后台': 'Admin console is for admins only',
+  '确定要重置演示数据吗？所有演示账号的预约、帖子、组队信息将恢复初始状态。': 'Reset demo data? All demo bookings, posts and team posts will be restored to their initial state.',
+  '你的账号已被封禁：不能发帖、评论、添加好友，但仍可正常预约场馆。如需申诉请联系场馆管理员。': 'Your account is banned: you cannot post, comment or add friends, but you can still book courts. Contact the admin to appeal.',
+  '你的账号已被禁止发帖：仍可浏览交流中心、评论和预约场馆。': 'Your account is muted: you can still browse the Forum, comment and book courts.',
+  '今天 · ': 'Today · ',
+  '明天 · ': 'Tomorrow · ',
+  '后天 · ': 'Day after tomorrow · ',
+  '仅可预约本月内日期（': 'Bookable dates this month (',
+  '），每天 08:00 - 22:00，每小时一个时段': '), 08:00 - 22:00 daily, hourly slots',
+  '共 ': 'Total ',
+  '已被预约：': 'Booked: ',
+  '可预约：': 'Available: ',
+  '审核中：': 'Pending review: ',
+  '时段已过期：': 'Slot passed: ',
+  '我的预约：': 'My booking: ',
+  ' 你有 ': ' You have ',
+  '已预约了其他场馆：这些时段的其他场馆暂不能预约或组队，如需改约请先取消对应预约（可到「个人主页 → 我的预约」取消）。': ' booked at other venues. Those slots are unavailable for booking or teams - cancel the original booking first (Profile → My booking).',
+  '取消该预约后即可预约此处': ', then you can book here',
+  '组队流程：发布组队消息 → 同学申请加入 → 队长同意 → 人数满额后提交预约 → 管理员审核': 'How it works: post a team-up message → students apply → captain approves → submit the booking when full → admin review',
+  '说点什么吧，例如：今晚羽毛球馆 3 楼还差 2 人…': 'Say something, e.g. badminton at East Gym 3F tonight, need 2 more...',
+  '例如：今晚羽毛球馆 3 楼还差 2 人…': 'e.g. badminton at East Gym 3F tonight, need 2 more...',
+  '>男<': '>Male<',
+  '>女<': '>Female<',
+  '羽毛球双打，东体育馆 3 楼，缺 2 人': 'Badminton doubles, East Gym 3F - need 2 more',
+  '排球新场 明天下午 15:00 缺 3 人': 'Volleyball New Courts tomorrow 15:00 - need 3 more',
+  '内容涉嫌广告推广': 'Content looks like spam',
+  '开放时间 08:00 - 22:00，每小时一个时段，仅可预约本月内日期。': 'Open 08:00 - 22:00 with hourly slots, current month only.',
+  '超级管理员账号在系统初始化时自动创建（admin / admin123），首次登录需修改密码。': 'The super admin account is created at init (admin / admin123); first sign-in requires a password change.',
+  '超级管理员账号由系统初始化脚本自动创建，首次登录需修改密码。': 'The super admin account is created by the init script; first sign-in requires a password change.',
+  '普通用户使用学号 + 密码登录，管理员使用管理员账号 + 密码登录。': 'Students sign in with student ID + password; admins use the admin account + password.',
+  '· 开放时间 08:00 - 22:00，每小时一个时段，仅可预约本月内日期。': '· Open 08:00 - 22:00 with hourly slots, current month only.',
+  '· 超级管理员账号在系统初始化时自动创建（admin / admin123），首次登录需修改密码。': '· The super admin account is created at init (admin / admin123); first sign-in requires a password change.',
+  '· 普通用户使用学号 + 密码登录，管理员使用管理员账号 + 密码登录。': '· Students sign in with student ID + password; admins use the admin account + password.',
+};
+
+const I18N_UNIT = {
+  '片': [' court', ' courts'],
+  '张': [' table', ' tables'],
+  '个场地': [' court', ' courts'],
+  '人': [' player', ' players'],
+  '位': [' friend', ' friends'],
+  '条': [' record', ' records'],
+  '条申请': [' application', ' applications'],
+  '支队伍': [' team', ' teams'],
+  '个时段': [' slot', ' slots'],
+};
+
+const I18N_CODE = { '羽': 'BD', '排': 'VB', '乒': 'TT', '网': 'TN', '泳': 'SW' };
+
+const I18N_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function tc(prefix) {
+  return LANG === 'en' ? (I18N_CODE[prefix] || prefix) : prefix;
+}
+
+let LANG = 'zh';
+try {
+  if (typeof localStorage !== 'undefined' && localStorage.getItem(LANG_STORE_KEY) === 'en') LANG = 'en';
+} catch (err) { /* ignore */ }
+
+const I18N_KEYS = Object.keys(I18N_DICT).sort((a, b) => b.length - a.length);
+
+function setLang(lang) {
+  LANG = lang === 'en' ? 'en' : 'zh';
+  try { localStorage.setItem(LANG_STORE_KEY, LANG); } catch (err) { /* ignore */ }
+}
+
+function tr(text) {
+  if (LANG !== 'en' || text == null) return text;
+  let out = String(text);
+  for (let i = 0; i < I18N_KEYS.length; i += 1) {
+    const key = I18N_KEYS[i];
+    if (out.indexOf(key) >= 0) out = out.split(key).join(I18N_DICT[key]);
+  }
+  out = out
+    .replace(/（/g, ' (')
+    .replace(/）/g, ')')
+    .replace(/｜/g, ' | ')
+    .replace(/，/g, ', ')
+    .replace(/、/g, ', ')
+    .replace(/：/g, ': ')
+    .replace(/。/g, '. ')
+    .replace(/\u3000/g, ' ')
+    .trim();
+  return releaseText(out);
+}
+
+const I18N_TOKENS = [];
+
+function tf(text) {
+  const raw = text == null ? '' : String(text);
+  if (LANG !== 'en') return typeof esc === 'function' ? esc(raw) : raw;
+  const value = (LANG === 'en' && I18N_DICT[raw]) ? I18N_DICT[raw] : raw;
+  I18N_TOKENS.push(typeof esc === 'function' ? esc(value) : value);
+  return '\u0001' + (I18N_TOKENS.length - 1) + '\u0001';
+}
+
+function releaseText(html) {
+  if (!I18N_TOKENS.length) return html;
+  let out = html;
+  for (let i = 0; i < I18N_TOKENS.length; i += 1) {
+    out = out.split('\u0001' + i + '\u0001').join(I18N_TOKENS[i]);
+  }
+  I18N_TOKENS.length = 0;
+  return out;
+}
+
+function tfRaw(value) {
+  I18N_TOKENS.push(typeof esc === 'function' ? esc(value) : String(value));
+  return '\u0001' + (I18N_TOKENS.length - 1) + '\u0001';
+}
+
+function noticeText(text) {
+  const raw = text == null ? '' : String(text);
+  if (LANG !== 'en') return typeof esc === 'function' ? esc(raw) : raw;
+  if (I18N_DICT[raw]) return tfRaw(I18N_DICT[raw]);
+  if (I18N_CACHE[raw]) return tfRaw(I18N_CACHE[raw]);
+  translateOnline(raw);
+  return tfRaw(raw);
+}
+
+const I18N_CACHE_KEY = 'hzau_tr_cache';
+
+let I18N_CACHE = {};
+try { I18N_CACHE = JSON.parse(localStorage.getItem(I18N_CACHE_KEY) || '{}') || {}; } catch (err) { I18N_CACHE = {}; }
+
+const I18N_PENDING = {};
+
+function saveTrCache() {
+  try { localStorage.setItem(I18N_CACHE_KEY, JSON.stringify(I18N_CACHE)); } catch (err) { /* ignore */ }
+}
+
+function translateOnline(text) {
+  if (LANG !== 'en' || I18N_CACHE[text] || I18N_PENDING[text] || typeof fetch !== 'function') return;
+  I18N_PENDING[text] = true;
+  const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=zh-CN|en';
+  fetch(url)
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      const out = data && data.responseData ? String(data.responseData.translatedText || '') : '';
+      if (out && !/MYMEMORY/i.test(out)) {
+        I18N_CACHE[text] = out;
+        saveTrCache();
+        if (typeof renderApp === 'function') {
+          renderApp();
+          if (typeof renderModal === 'function') renderModal();
+        }
+      }
+    })
+    .catch(function () { /* 离线时保留原文 */ })
+    .then(function () { delete I18N_PENDING[text]; });
+}
+function tu(unit, count) {
+  if (LANG !== 'en') return unit;
+  const pair = I18N_UNIT[unit];
+  if (!pair) return unit;
+  return Number(count) === 1 ? pair[0] : pair[1];
+}

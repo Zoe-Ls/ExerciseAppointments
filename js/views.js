@@ -23,6 +23,7 @@ function val(id) {
 
 function fmtDay(date) {
   const parts = String(date).split('-');
+  if (LANG === 'en') return I18N_MONTHS[Number(parts[1]) - 1] + ' ' + Number(parts[2]);
   return Number(parts[1]) + '月' + Number(parts[2]) + '日';
 }
 
@@ -48,7 +49,7 @@ function avatarHtml(user, size) {
   const cls = 'avatar ' + (size || '') + ' tone-' + toneOf(user ? user.id : 'x');
   if (user && user.avatar) return '<span class="' + cls + '"><img src="' + user.avatar + '" alt=""></span>';
   const name = user && user.name ? user.name : '？';
-  return '<span class="' + cls + '">' + esc(name.slice(0, 1)) + '</span>';
+  return '<span class="' + cls + '">' + tf(name.slice(0, 1)) + '</span>';
 }
 
 function logoMark() {
@@ -79,12 +80,12 @@ function badge(text, tone) {
 function venueLabel(typeId, no) {
   const t = VENUE_MAP[typeId];
   if (!t) return typeId + ' ' + no;
-  return t.name + ' ' + t.prefix + no;
+  return t.name + ' ' + tc(t.prefix) + no;
 }
 
 function userChipById(id, size) {
   const u = Store.userById(id);
-  return avatarHtml(u, size || 'avatar-sm') + '<span>' + esc(u ? u.name : '未知用户') + '</span>';
+  return avatarHtml(u, size || 'avatar-sm') + '<span>' + tf(u ? u.name : '未知用户') + '</span>';
 }
 
 function bookingBadge(status) {
@@ -107,7 +108,8 @@ function shell(user, activePath, content) {
   return '<header class="app-header"><div class="app-header-inner">' + brandLockup()
     + '<nav class="nav">' + nav + '</nav>'
     + '<div class="user-chip">' + avatarHtml(user, 'avatar-sm')
-    + '<span class="name">' + esc(user.name) + (user.role === 'admin' ? ' · 管理员' : '') + '</span>'
+    + '<span class="name">' + tf(user.name) + (user.role === 'admin' ? ' · 管理员' : '') + '</span>'
+    + '<button class="btn btn-sm" data-action="switch-lang" data-lang="' + (LANG === 'en' ? 'zh' : 'en') + '">' + (LANG === 'en' ? '中文' : 'EN') + '</button>'
     + '<button class="btn btn-sm" data-action="logout">退出</button></div>'
     + '</div></header>'
     + '<main class="page">' + banners + content
@@ -157,6 +159,7 @@ function viewLogin() {
     + '<ul class="hero-list">' + heroList.map((t) => '<li>' + esc(t) + '</li>').join('') + '</ul>'
     + '<p class="hero-motto">' + HZAU.motto + '</p>'
     + '</section><section class="auth-panel"><div class="auth-card">'
+    + '<div class="row" style="justify-content:flex-end;margin-bottom:10px"><button class="btn btn-sm" data-action="switch-lang" data-lang="' + (LANG === 'en' ? 'zh' : 'en') + '">' + (LANG === 'en' ? '中文' : 'EN') + '</button></div>'
     + '<div class="tabs">' + tabs.map((t) => '<button class="' + (tab === t[0] ? 'active' : '') + '" data-action="switch-login-tab" data-tab="' + t[0] + '">' + t[1] + '</button>').join('') + '</div>'
     + form
     + '<div class="demo-box"><h4>演示账号（点击自动填入）</h4>'
@@ -168,7 +171,7 @@ function viewLogin() {
 function cellHtml(type, venue, slot) {
   const st = Store.slotStatus(type.id, venue.no, ui.date, slot.id);
   const data = 'data-action="cell" data-type="' + type.id + '" data-no="' + venue.no + '" data-slot="' + slot.id + '"';
-  const title = slot.label + ' · ' + type.name + ' ' + venue.code;
+  const title = slot.label + ' · ' + type.name + ' ' + tc(type.prefix) + venue.no;
   if (st.state === 'mine') return '<td><button class="cell cell-mine" ' + data + ' title="我的预约：' + title + '">我的</button></td>';
   if (st.state === 'taken') return '<td><button class="cell cell-taken" disabled title="已被预约：' + title + '">已约</button></td>';
   if (st.state === 'pending') return '<td><button class="cell cell-pending" disabled title="审核中：' + title + '">待审</button></td>';
@@ -201,9 +204,9 @@ function viewBook() {
     g.items.push(t);
   });
   const chips = groups.map((g) => '<div class="chip-group"><span class="chip-group-label">' + esc(g.name) + '</span><div class="chips">'
-    + g.items.map((t) => '<button class="chip ' + (t.id === type.id ? 'active' : '') + '" data-action="pick-venue-type" data-id="' + t.id + '">' + t.icon + ' ' + esc(t.name) + ' <span class="cnt">' + t.count + '片</span></button>').join('')
+    + g.items.map((t) => '<button class="chip ' + (t.id === type.id ? 'active' : '') + '" data-action="pick-venue-type" data-id="' + t.id + '">' + t.icon + ' ' + esc(t.name) + ' <span class="cnt">' + t.count + tu('片', t.count) + '</span></button>').join('')
     + '</div></div>').join('');
-  const rows = venues.map((v) => '<tr><th><span class="venue-code">' + v.code + '</span></th>'
+  const rows = venues.map((v) => '<tr><th><span class="venue-code">' + tc(type.prefix) + v.no + '</span></th>'
     + TIME_SLOTS.map((s) => cellHtml(type, v, s)).join('') + '</tr>').join('');
   const content = '<div class="page-head">'
     + '<div><h1 class="page-title">场馆预约</h1><p class="sub">选择场馆类型与日期，绿色图标表示该时段可以预约</p></div>'
@@ -225,10 +228,10 @@ function viewBook() {
     + '<span><i class="dot dot-past"></i>已过期</span>'
     + '<span><i class="dot dot-conflict"></i>时段冲突（你已约其他场馆）</span>'
     + '</div></div></div>'
-    + (conflictCount ? '<div class="banner banner-warn">⏱ ' + dayLabel(ui.date) + ' 你有 <b>' + conflictSlots.size + '</b> 个时段已预约了其他场馆：这些时段的其他场馆暂不能预约或组队，如需改约请先取消对应预约（可到「个人主页 → 我的预约」取消）。</div>' : '')
+    + (conflictCount ? '<div class="banner banner-warn">⏱ ' + dayLabel(ui.date) + ' 你有 <b>' + conflictSlots.size + '</b>' + tu('个时段', conflictSlots.size) + '已预约了其他场馆：这些时段的其他场馆暂不能预约或组队，如需改约请先取消对应预约（可到「个人主页 → 我的预约」取消）。</div>' : '')
     + '<div class="card venue-info">'
     + '<span class="venue-icon">' + type.icon + '</span>'
-    + '<div><strong>' + esc(type.name) + '</strong><p class="hint">📍 ' + esc(type.location) + ' ｜ 共 ' + type.count + ' 个场地 ｜ 直接预约，人数不限，需填写预约理由</p></div>'
+    + '<div><strong>' + esc(type.name) + '</strong><p class="hint">📍 ' + esc(type.location) + ' ｜ 共 ' + type.count + tu('个场地', type.count) + ' ｜ 直接预约，人数不限，需填写预约理由</p></div>'
     + '<div class="summary-pills"><span class="pill">' + dayLabel(ui.date) + '</span><span class="pill">可约 <b>' + freeCount + '</b></span><span class="pill">已约 / 待审 <b>' + takenCount + '</b></span>'
     + (conflictCount ? '<span class="pill pill-conflict">时段冲突 <b>' + conflictCount + '</b></span>' : '')
     + '</div>'
@@ -253,7 +256,7 @@ function teamCard(team, user) {
   if (expired) {
     actions = '<span class="hint">活动时间已过，不能再申请、管理或退出</span>';
   } else if (isOwner) {
-    actions = '<button class="btn btn-sm btn-primary" data-action="open-team-manage" data-id="' + team.id + '">管理队伍' + (pending.length ? '（' + pending.length + ' 条申请）' : '') + '</button>'
+    actions = '<button class="btn btn-sm btn-primary" data-action="open-team-manage" data-id="' + team.id + '">管理队伍' + (pending.length ? '（' + pending.length + tu('条申请', pending.length) + '）' : '') + '</button>'
       + '<button class="btn btn-sm" data-action="team-book" data-id="' + team.id + '"' + (joined.length < team.need || team.status === 'booked' ? ' disabled' : '') + '>满员后提交预约</button>';
   } else if (mine) {
     if (mine.status === 'pending') {
@@ -268,15 +271,15 @@ function teamCard(team, user) {
     actions = '<button class="btn btn-sm btn-primary" data-action="team-apply" data-id="' + team.id + '">申请加入</button>';
   }
   return '<div class="card team-card' + (expired ? ' is-expired' : '') + '"><div class="row-between">'
-    + '<div><strong>' + esc(team.title) + '</strong><p class="hint">' + type.icon + ' ' + venueLabel(team.venueTypeId, team.venueNo) + ' ｜ ' + dayLabel(team.date) + ' ｜ ' + slotLabel(team.slot) + '</p></div>'
+    + '<div><strong>' + tf(team.title) + '</strong><p class="hint">' + type.icon + ' ' + venueLabel(team.venueTypeId, team.venueNo) + ' ｜ ' + dayLabel(team.date) + ' ｜ ' + slotLabel(team.slot) + '</p></div>'
     + statusText + '</div>'
-    + '<div class="team-meta"><span>发起人：' + esc(Store.userById(team.userId) ? Store.userById(team.userId).name : '未知') + '</span>'
-    + '<span>需要人数：' + team.need + ' 人</span>'
-    + '<span>已加入：' + joined.length + ' 人</span>'
-    + (team.contact ? '<span>联系方式：' + esc(team.contact) + '</span>' : '')
+    + '<div class="team-meta"><span>发起人：' + tf(Store.userById(team.userId) ? Store.userById(team.userId).name : '未知') + '</span>'
+    + '<span>需要人数：' + team.need + tu('人', team.need) + '</span>'
+    + '<span>已加入：' + joined.length + tu('人', joined.length) + '</span>'
+    + (team.contact ? '<span>联系方式：' + tf(team.contact) + '</span>' : '')
     + '<span class="muted">发布于 ' + esc(team.createdAt) + '</span></div>'
-    + (team.note ? '<p class="hint">' + esc(team.note) + '</p>' : '')
-    + '<div class="team-members">' + team.members.map((m) => '<span class="member-pill ' + (m.status === 'pending' ? 'pending' : '') + '">' + esc(m.name) + (m.status === 'pending' ? '（待同意）' : '') + '</span>').join('') + '</div>'
+    + (team.note ? '<p class="hint">' + tf(team.note) + '</p>' : '')
+    + '<div class="team-members">' + team.members.map((m) => '<span class="member-pill ' + (m.status === 'pending' ? 'pending' : '') + '">' + tf(m.name) + (m.status === 'pending' ? '（待同意）' : '') + '</span>').join('') + '</div>'
     + '<div class="row" style="margin-top:12px">' + actions + '</div></div>';
 }
 
@@ -332,17 +335,17 @@ function postCard(post, user) {
   const isFriend = Store.isFriend(user.id, post.userId);
   const canPost = Store.canPost(user);
   const comments = post.comments.map((c) => '<div class="comment">' + avatarHtml(Store.userById(c.userId), 'avatar-sm')
-    + '<div><span class="who">' + esc(Store.userById(c.userId) ? Store.userById(c.userId).name : '未知') + '</span>：' + esc(c.content)
+    + '<div><span class="who">' + tf(Store.userById(c.userId) ? Store.userById(c.userId).name : '未知') + '</span>：' + tf(c.content)
     + '<span class="hint"> ' + esc(c.createdAt) + '</span>'
     + '<button class="link-btn" data-action="report-comment" data-post="' + post.id + '" data-comment="' + c.id + '" data-target="' + c.userId + '">举报</button></div></div>').join('');
   return '<div class="card post"><div class="post-head">' + avatarHtml(author, 'avatar-sm')
-    + '<div><span class="who">' + esc(author ? author.name : '未知用户') + '</span>'
-    + '<p class="hint">' + esc(author && author.major ? author.major : '') + ' ｜ ' + esc(post.createdAt) + '</p></div>'
+    + '<div><span class="who">' + tf(author ? author.name : '未知用户') + '</span>'
+    + '<p class="hint">' + tf(author && author.major ? author.major : '') + ' ｜ ' + esc(post.createdAt) + '</p></div>'
     + '<div class="row" style="margin-left:auto">'
     + (!isSelf && !isFriend ? '<button class="link-btn" data-action="add-friend" data-id="' + post.userId + '">＋ 加好友</button>' : '')
     + '<button class="link-btn" data-action="report-post" data-post="' + post.id + '" data-target="' + post.userId + '">举报</button>'
     + '</div></div>'
-    + '<p class="post-content">' + esc(post.content) + '</p>'
+    + '<p class="post-content">' + tf(post.content) + '</p>'
     + '<div class="post-actions">'
     + '<button class="link-btn ' + (liked ? 'on' : '') + '" data-action="like" data-id="' + post.id + '">👍 点赞 ' + post.likes.length + '</button>'
     + '<button class="link-btn ' + (saved ? 'on' : '') + '" data-action="favorite" data-id="' + post.id + '">⭐ 收藏 ' + post.favorites.length + '</button>'
@@ -356,7 +359,7 @@ function postCard(post, user) {
 const NOTICE_PIN_LIMIT = 3;
 
 function noticeItemHtml(n) {
-  return '<div class="notice-item"><span class="notice-tag">通知</span><div><strong>' + esc(n.title) + '</strong><p class="hint">' + esc(n.content) + '</p><p class="hint">' + esc(n.createdAt) + ' · ' + esc(n.by) + '</p></div></div>';
+  return '<div class="notice-item"><span class="notice-tag">通知</span><div><strong>' + noticeText(n.title) + '</strong><p class="hint">' + noticeText(n.content) + '</p><p class="hint">' + esc(n.createdAt) + ' · ' + tf(n.by) + '</p></div></div>';
 }
 
 function viewForum() {
@@ -382,7 +385,7 @@ function viewForum() {
   return shell(user, 'forum', content);
 }
 function profileField(label, id, value, type) {
-  return '<div class="field"><label>' + label + '</label><input id="' + id + '" type="' + (type || 'text') + '" value="' + esc(value) + '"></div>';
+  return '<div class="field"><label>' + label + '</label><input id="' + id + '" type="' + (type || 'text') + '" value="' + tf(value) + '"></div>';
 }
 
 function viewMe() {
@@ -399,9 +402,9 @@ function viewMe() {
     + '<div class="profile-head">'
     + '<div class="avatar-upload">' + avatarHtml(user, 'avatar-lg')
     + '<label title="上传头像">＋<input type="file" accept="image/*" data-change="avatar-upload"></label></div>'
-    + '<div class="grow"><h2 style="font-size:18px">' + esc(user.name) + ' ' + (user.banned ? badge('已封禁', 'red') : (user.muted ? badge('禁止发帖', 'amber') : badge('正常', 'green'))) + '</h2>'
+    + '<div class="grow"><h2 style="font-size:18px">' + tf(user.name) + ' ' + (user.banned ? badge('已封禁', 'red') : (user.muted ? badge('禁止发帖', 'amber') : badge('正常', 'green'))) + '</h2>'
     + '<p class="hint">学号：' + esc(user.studentId) + ' ｜ 注册时间：' + esc(user.createdAt) + '</p>'
-    + '<p class="hint">好友 ' + friends.length + ' 位 ｜ 预约 ' + bookings.length + ' 条 ｜ 帖子 ' + myPosts.length + ' 条</p></div>'
+    + '<p class="hint">好友 ' + friends.length + tu('位', friends.length) + ' ｜ 预约 ' + bookings.length + tu('条', bookings.length) + ' ｜ 帖子 ' + myPosts.length + tu('条', myPosts.length) + '</p></div>'
     + '<button class="btn btn-primary" data-action="save-profile">保存资料</button></div>'
     + '<div class="field-grid" style="margin-top:16px">'
     + profileField('姓名', 'pf-name', user.name)
@@ -412,7 +415,7 @@ function viewMe() {
     + profileField('班级', 'pf-class', user.className)
     + profileField('爱好', 'pf-hobbies', user.hobbies)
     + '</div>'
-    + '<div class="field"><label>个人介绍</label><textarea class="textarea" id="pf-bio" rows="2">' + esc(user.bio) + '</textarea></div>'
+    + '<div class="field"><label>个人介绍</label><textarea class="textarea" id="pf-bio" rows="2">' + tf(user.bio) + '</textarea></div>'
     + '<p class="hint">提示：可上传本地图片作为头像，资料会保存在浏览器本地。</p></div>';
 
   let body = '';
@@ -425,8 +428,8 @@ function viewMe() {
             : (b.status === 'rejected' ? '<span class="hint">—</span>'
               : '<button class="btn btn-sm btn-danger" data-action="cancel-booking" data-id="' + b.id + '">取消预约</button>');
           return '<tr' + (expired ? ' class="is-expired"' : '') + '>'
-            + '<td>' + VENUE_MAP[b.venueTypeId].icon + ' ' + venueLabel(b.venueTypeId, b.venueNo) + '</td><td>' + dayLabel(b.date) + '</td><td>' + slotLabel(b.slot) + '</td><td>' + esc(b.reason || '—') + '</td>'
-            + '<td class="hint">' + esc(b.members && b.members.length ? b.members.join('、') : '—') + '</td><td>' + bookingBadge(b.status) + '</td>'
+            + '<td>' + VENUE_MAP[b.venueTypeId].icon + ' ' + venueLabel(b.venueTypeId, b.venueNo) + '</td><td>' + dayLabel(b.date) + '</td><td>' + slotLabel(b.slot) + '</td><td>' + tf(b.reason || '—') + '</td>'
+            + '<td class="hint">' + tf(b.members && b.members.length ? b.members.join('、') : '—') + '</td><td>' + bookingBadge(b.status) + '</td>'
             + '<td>' + action + '</td></tr>';
         }).join('')
         + '</tbody></table></div>'
@@ -443,7 +446,7 @@ function viewMe() {
             : (t.status === 'booked' ? badge('已提交预约', 'green')
               : (joined.length >= t.need ? badge('人数已满', 'blue') : badge('招募中 ' + joined.length + '/' + t.need, 'amber')));
           return '<tr' + (expired ? ' class="is-expired"' : '') + '>'
-            + '<td>' + esc(t.title) + '</td>'
+            + '<td>' + tf(t.title) + '</td>'
             + '<td>' + VENUE_MAP[t.venueTypeId].icon + ' ' + venueLabel(t.venueTypeId, t.venueNo) + '</td>'
             + '<td>' + dayLabel(t.date) + '<p class="hint">' + slotLabel(t.slot) + '</p></td>'
             + '<td>' + role + '</td><td>' + statusText + '</td></tr>';
@@ -454,14 +457,14 @@ function viewMe() {
     body = '<div class="card card-pad"><strong>好友申请</strong>'
       + (requests.length ? requests.map((r) => {
         const from = Store.userById(r.fromId);
-        return '<div class="row-between" style="margin-top:10px"><div class="row">' + avatarHtml(from, 'avatar-sm') + '<span>' + esc(from ? from.name : '未知') + ' 申请加你为好友</span></div>'
+        return '<div class="row-between" style="margin-top:10px"><div class="row">' + avatarHtml(from, 'avatar-sm') + '<span>' + tf(from ? from.name : '未知') + ' 申请加你为好友</span></div>'
           + '<div class="row"><span class="hint">' + esc(r.createdAt) + '</span>'
           + '<button class="btn btn-sm btn-primary" data-action="friend-respond" data-id="' + r.id + '" data-accept="1">同意</button>'
           + '<button class="btn btn-sm" data-action="friend-respond" data-id="' + r.id + '" data-accept="0">拒绝</button></div></div>';
       }).join('') : '<p class="hint" style="margin-top:8px">暂无待处理的好友申请</p>')
       + '</div>'
       + '<div class="card card-pad" style="margin-top:14px"><strong>我的好友（' + friends.length + '）</strong>'
-      + (friends.length ? '<div class="row wrap" style="margin-top:10px;gap:14px">' + friends.map((f) => '<div class="row" style="gap:8px">' + avatarHtml(f, 'avatar-sm') + '<div><div>' + esc(f.name) + '</div><span class="hint">' + esc(f.major || '') + '</span></div></div>').join('') + '</div>'
+      + (friends.length ? '<div class="row wrap" style="margin-top:10px;gap:14px">' + friends.map((f) => '<div class="row" style="gap:8px">' + avatarHtml(f, 'avatar-sm') + '<div><div>' + tf(f.name) + '</div><span class="hint">' + tf(f.major || '') + '</span></div></div>').join('') + '</div>'
         : '<p class="hint" style="margin-top:8px">还没有好友，去交流中心加好友吧</p>')
       + '</div>';
   } else if (tab === 'posts') {
@@ -493,8 +496,8 @@ function viewAdmin() {
           return '<tr' + (expired ? ' class="is-expired"' : '') + '><td>' + userChipById(b.userId) + '</td>'
           + '<td>' + VENUE_MAP[b.venueTypeId].icon + ' ' + venueLabel(b.venueTypeId, b.venueNo) + '</td>'
           + '<td>' + dayLabel(b.date) + '<p class="hint">' + slotLabel(b.slot) + '</p></td>'
-          + '<td>' + esc(b.reason || '—') + '</td>'
-          + '<td class="hint">' + esc(b.members && b.members.length ? b.members.join('、') : '—') + '</td>'
+          + '<td>' + tf(b.reason || '—') + '</td>'
+          + '<td class="hint">' + tf(b.members && b.members.length ? b.members.join('、') : '—') + '</td>'
           + '<td>' + (expired ? '<span class="hint">已过期</span>'
             : '<div class="row"><button class="btn btn-sm btn-primary" data-action="review-booking" data-id="' + b.id + '" data-status="approved">通过</button>'
               + '<button class="btn btn-sm btn-danger" data-action="review-booking" data-id="' + b.id + '" data-status="rejected">拒绝</button></div>') + '</td></tr>';
@@ -508,18 +511,18 @@ function viewAdmin() {
       + '</div>';
   } else if (tab === 'report') {
     const reports = Store.reports();
-    body = '<div class="card card-pad"><strong>用户举报（待处理 ' + stats.openReports + ' 条）</strong>'
+    body = '<div class="card card-pad"><strong>用户举报（待处理 ' + stats.openReports + tu('条', stats.openReports) + '）</strong>'
       + (reports.length ? reports.map((r) => {
         const target = Store.userById(r.targetUserId);
         const reporter = Store.userById(r.reporterId);
         const post = r.postId ? Store.load().posts.find((p) => p.id === r.postId) : null;
         const typeText = r.targetType === 'post' ? '帖子' : '用户';
         return '<div class="notice-item" style="padding:12px 0"><span class="notice-tag" style="background:' + (r.status === 'open' ? '#b23a2e' : '#146c4a') + ';color:#fff">' + (r.status === 'open' ? '待处理' : '已处理') + '</span>'
-          + '<div class="grow"><div class="row wrap"><strong>' + esc(target ? target.name : '未知用户') + '</strong>'
+          + '<div class="grow"><div class="row wrap"><strong>' + tf(target ? target.name : '未知用户') + '</strong>'
           + (target && target.banned ? badge('已封禁', 'red') : (target && target.muted ? badge('禁止发帖', 'amber') : badge('正常', 'green')))
           + '<span class="hint">被举报内容：' + typeText + '</span></div>'
-          + '<p class="hint">举报人：' + esc(reporter ? reporter.name : '未知') + ' ｜ 理由：' + esc(r.reason) + ' ｜ ' + esc(r.createdAt) + '</p>'
-          + (post ? '<p class="hint">内容摘要：' + esc(post.content.slice(0, 40)) + (post.content.length > 40 ? '…' : '') + '</p>' : '')
+          + '<p class="hint">举报人：' + tf(reporter ? reporter.name : '未知') + ' ｜ 理由：' + tf(r.reason) + ' ｜ ' + esc(r.createdAt) + '</p>'
+          + (post ? '<p class="hint">内容摘要：' + tf(post.content.slice(0, 40)) + (post.content.length > 40 ? '…' : '') + '</p>' : '')
           + '<div class="row wrap" style="margin-top:8px">'
           + '<button class="btn btn-sm" data-action="report-resolve" data-id="' + r.id + '" data-op="dismiss">驳回举报</button>'
           + '<button class="btn btn-sm" data-action="report-resolve" data-id="' + r.id + '" data-op="warn">警告用户</button>'
@@ -538,7 +541,7 @@ function viewAdmin() {
       + '<p class="form-error" id="notice-error"></p>'
       + '<div class="row" style="justify-content:flex-end"><button class="btn btn-primary" data-action="notice-publish">发布通知</button></div></div>'
       + '<div class="card card-pad" style="margin-top:14px"><strong>已发布通知（' + notices.length + '）</strong>'
-      + (notices.length ? notices.map((n) => '<div class="notice-item"><span class="notice-tag">通知</span><div class="grow"><strong>' + esc(n.title) + '</strong><p class="hint">' + esc(n.content) + '</p><p class="hint">' + esc(n.createdAt) + '</p></div>'
+      + (notices.length ? notices.map((n) => '<div class="notice-item"><span class="notice-tag">通知</span><div class="grow"><strong>' + noticeText(n.title) + '</strong><p class="hint">' + noticeText(n.content) + '</p><p class="hint">' + esc(n.createdAt) + '</p></div>'
         + '<button class="btn btn-sm btn-danger" data-action="notice-delete" data-id="' + n.id + '">删除</button></div>').join('') : '<p class="hint" style="margin-top:8px">暂无通知</p>')
       + '<p class="hint" style="margin-top:8px">通知会显示在交流中心顶部。</p></div>';
   } else {
@@ -581,8 +584,8 @@ function modalBooking(m) {
     + '<p class="hint">直接预约，无需选择预约模式，人数不限</p>'
     + '</div></div>';
   const body = '<div class="modal-body">'
-    + '<div class="field"><label>预约理由（必填）</label><textarea class="textarea" id="booking-reason" rows="3" placeholder="例如：院队训练 / 和同学约球 / 班级活动">' + esc(m.reason || '') + '</textarea></div>'
-    + '<div class="field"><label>同行成员（选填，不限人数）</label><input id="booking-members" placeholder="多个姓名用「、」或逗号分隔，例如：张伟、李娜" value="' + esc(m.membersText || user.name) + '"></div>'
+    + '<div class="field"><label>预约理由（必填）</label><textarea class="textarea" id="booking-reason" rows="3" placeholder="例如：院队训练 / 和同学约球 / 班级活动">' + tf(m.reason || '') + '</textarea></div>'
+    + '<div class="field"><label>同行成员（选填，不限人数）</label><input id="booking-members" placeholder="多个姓名用「、」或逗号分隔，例如：张伟、李娜" value="' + tf(m.membersText || user.name) + '"></div>'
     + '<p class="hint">管理员审核时会看到预约理由，请写清用途；同行成员仅作记录，不限制人数。</p>'
     + '<p class="form-error">' + esc(m.error || '') + '</p></div>';
   const foot = '<div class="modal-foot"><button class="btn" data-action="close-modal">取消</button>'
@@ -598,8 +601,8 @@ function modalBookingDetail(m) {
     ['场地', venueLabel(b.venueTypeId, b.venueNo)],
     ['日期', dayLabel(b.date)],
     ['时段', slotLabel(b.slot)],
-    ['预约理由', b.reason || '—'],
-    ['同行成员', b.members && b.members.length ? b.members.join('、') : '—'],
+    ['预约理由', tf(b.reason || '—')],
+    ['同行成员', tf(b.members && b.members.length ? b.members.join('、') : '—')],
     ['状态', b.status === 'approved' ? '管理员已通过' : (b.status === 'rejected' ? '已被拒绝' : '等待管理员审核')],
     ['提交时间', b.createdAt],
   ];
@@ -624,7 +627,7 @@ function modalTeamCreate(m) {
     + '<div class="field"><label>时段</label><select id="tc-slot">' + slotOptions + '</select></div>'
     + '<div class="field"><label>需要人数</label><input id="tc-need" type="number" min="2" value="' + (m.need || 4) + '"></div>'
     + '</div>'
-    + '<div class="field"><label>队伍标题</label><input id="tc-title" placeholder="例如：排球新场 周末下午缺 3 人" value="' + esc(m.title || '') + '"></div>'
+    + '<div class="field"><label>队伍标题</label><input id="tc-title" placeholder="例如：排球新场 周末下午缺 3 人" value="' + tf(m.title || '') + '"></div>'
     + '<div class="field"><label>联系方式</label><input id="tc-contact" placeholder="微信号 / 手机号"></div>'
     + '<div class="field"><label>说明</label><textarea class="textarea" id="tc-note" rows="2" placeholder="例如：水平不限，有球"></textarea></div>'
     + '<p class="form-error">' + esc(m.error || '') + '</p></div>';
@@ -638,11 +641,11 @@ function modalTeamManage(m) {
   const joined = team.members.filter((x) => x.status === 'joined');
   const pending = team.members.filter((x) => x.status === 'pending');
   const body = '<div class="modal-body">'
-    + '<p class="section-hint">' + esc(team.title) + ' ｜ ' + venueLabel(team.venueTypeId, team.venueNo) + ' ｜ ' + dayLabel(team.date) + ' ' + slotLabel(team.slot) + '</p>'
-    + '<div class="team-members">' + joined.map((x) => '<span class="member-pill">' + esc(x.name) + '</span>').join('') + '</div>'
+    + '<p class="section-hint">' + tf(team.title) + ' ｜ ' + venueLabel(team.venueTypeId, team.venueNo) + ' ｜ ' + dayLabel(team.date) + ' ' + slotLabel(team.slot) + '</p>'
+    + '<div class="team-members">' + joined.map((x) => '<span class="member-pill">' + tf(x.name) + '</span>').join('') + '</div>'
     + '<p class="section-hint" style="margin-top:14px">待同意的入队申请（' + pending.length + '）</p>'
     + (pending.length ? pending.map((x) => '<div class="row-between" style="margin-bottom:8px"><div class="row">' + avatarHtml(Store.userById(x.userId), 'avatar-sm')
-      + '<div><div>' + esc(x.name) + '</div><span class="hint">' + esc(x.note || '申请加入队伍') + '</span></div></div>'
+      + '<div><div>' + tf(x.name) + '</div><span class="hint">' + tf(x.note || '申请加入队伍') + '</span></div></div>'
       + '<div class="row"><button class="btn btn-sm btn-primary" data-action="team-review" data-id="' + team.id + '" data-user="' + x.userId + '" data-approve="1">同意</button>'
       + '<button class="btn btn-sm" data-action="team-review" data-id="' + team.id + '" data-user="' + x.userId + '" data-approve="0">拒绝</button></div></div>').join('')
       : '<p class="hint">暂无待处理申请</p>')
@@ -654,7 +657,7 @@ function modalTeamManage(m) {
 
 function modalReport(m) {
   const body = '<div class="modal-body">'
-    + '<p class="section-hint">举报对象：' + esc(m.targetName || '该用户') + ' 的' + (m.targetType === 'post' ? '帖子' : '评论') + '</p>'
+    + '<p class="section-hint">举报对象：' + tf(m.targetName || '该用户') + ' 的' + (m.targetType === 'post' ? '帖子' : '评论') + '</p>'
     + '<div class="field"><label>举报理由</label><textarea class="textarea" id="report-reason" rows="3" placeholder="请说明举报原因，例如：广告推广、人身攻击、不实信息"></textarea></div>'
     + '<p class="hint">管理员核实后，可对违规用户进行警告、禁止发帖或封禁账号处理。</p>'
     + '<p class="form-error">' + esc(m.error || '') + '</p></div>';
@@ -687,13 +690,13 @@ function renderModal() {
   if (!root) return;
   const m = ui.modal;
   if (!m) { root.innerHTML = ''; return; }
-  if (m.kind === 'booking') root.innerHTML = modalBooking(m);
-  else if (m.kind === 'booking-detail') root.innerHTML = modalBookingDetail(m);
-  else if (m.kind === 'team-create') root.innerHTML = modalTeamCreate(m);
-  else if (m.kind === 'team-manage') root.innerHTML = modalTeamManage(m);
-  else if (m.kind === 'report') root.innerHTML = modalReport(m);
-  else if (m.kind === 'notice-history') root.innerHTML = modalNoticeHistory();
-  else if (m.kind === 'password') root.innerHTML = modalPassword(m);
+  if (m.kind === 'booking') root.innerHTML = tr(modalBooking(m));
+  else if (m.kind === 'booking-detail') root.innerHTML = tr(modalBookingDetail(m));
+  else if (m.kind === 'team-create') root.innerHTML = tr(modalTeamCreate(m));
+  else if (m.kind === 'team-manage') root.innerHTML = tr(modalTeamManage(m));
+  else if (m.kind === 'report') root.innerHTML = tr(modalReport(m));
+  else if (m.kind === 'notice-history') root.innerHTML = tr(modalNoticeHistory());
+  else if (m.kind === 'password') root.innerHTML = tr(modalPassword(m));
 }
 
 const Views = {

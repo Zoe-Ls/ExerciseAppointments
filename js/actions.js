@@ -9,7 +9,7 @@ function toast(message, tone) {
   if (!root) return;
   const el = document.createElement('div');
   el.className = 'toast' + (tone === 'error' ? ' toast-error' : '');
-  el.textContent = message;
+  el.textContent = tr(message);
   root.appendChild(el);
   setTimeout(() => { el.remove(); }, 2800);
 }
@@ -35,6 +35,12 @@ function parseMembers(text) {
 
 const Actions = {
   'switch-login-tab': function (el) { ui.loginTab = el.dataset.tab; renderApp(); },
+
+  'switch-lang': function (el) {
+    setLang(el.dataset.lang);
+    renderApp();
+    renderModal();
+  },
 
   'fill-demo': function (el) {
     ui.loginTab = el.dataset.tab;

@@ -33,10 +33,10 @@ function renderApp() {
     const path = parseRoute();
     if (!user) {
       if (path !== 'login') { location.hash = '#/login'; return; }
-      app.innerHTML = Views.login();
+      app.innerHTML = tr(Views.login());
     } else if (user.role === 'admin') {
       if (path !== 'admin') { location.hash = '#/admin'; return; }
-      app.innerHTML = Views.admin();
+      app.innerHTML = tr(Views.admin());
     } else if (path === 'login') {
       location.hash = '#/book';
       return;
@@ -48,7 +48,7 @@ function renderApp() {
       const teamDate = queryParam('teamDate');
       ui.teamDate = /^\d{4}-\d{2}-\d{2}$/.test(teamDate) ? teamDate : '';
       ui.mineTeams = queryParam('mine') === '1';
-      app.innerHTML = (STUDENT_VIEWS[path] || Views.book)();
+      app.innerHTML = tr((STUDENT_VIEWS[path] || Views.book)());
     }
     if (user && user.mustChangePassword && (!ui.modal || ui.modal.kind !== 'password')) {
       ui.modal = { kind: 'password', error: '' };
