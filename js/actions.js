@@ -103,13 +103,20 @@ const Actions = {
     if (!value) { Actions['clear-team-date'](); return; }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) { renderApp(); return; }
     ui.teamDate = value;
-    setTeamDateQuery(value);
+    syncTeamsQuery();
     renderApp();
   },
 
   'clear-team-date': function () {
     ui.teamDate = '';
-    setTeamDateQuery('');
+    ui.mineTeams = false;
+    syncTeamsQuery();
+    renderApp();
+  },
+
+  'toggle-my-teams': function () {
+    ui.mineTeams = !ui.mineTeams;
+    syncTeamsQuery();
     renderApp();
   },
 

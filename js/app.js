@@ -11,9 +11,12 @@ function queryParam(name) {
   return new URLSearchParams(raw.slice(idx + 1)).get(name) || '';
 }
 
-function setTeamDateQuery(value) {
+function syncTeamsQuery() {
   const path = String(location.hash || '').replace(/^#\/?/, '').split('?')[0].trim() || 'teams';
-  const target = value ? '#/' + path + '?teamDate=' + encodeURIComponent(value) : '#/' + path;
+  const params = [];
+  if (ui.teamDate) params.push('teamDate=' + encodeURIComponent(ui.teamDate));
+  if (ui.mineTeams) params.push('mine=1');
+  const target = '#/' + path + (params.length ? '?' + params.join('&') : '');
   if (location.hash === target) return;
   try { history.replaceState(null, '', target); } catch (err) { location.hash = target; }
 }
@@ -44,6 +47,7 @@ function renderApp() {
     } else {
       const teamDate = queryParam('teamDate');
       ui.teamDate = /^\d{4}-\d{2}-\d{2}$/.test(teamDate) ? teamDate : '';
+      ui.mineTeams = queryParam('mine') === '1';
       app.innerHTML = (STUDENT_VIEWS[path] || Views.book)();
     }
     if (user && user.mustChangePassword && (!ui.modal || ui.modal.kind !== 'password')) {

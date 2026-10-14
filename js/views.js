@@ -3,6 +3,7 @@ const ui = {
   venueTypeId: 'badminton',
   date: todayStr(),
   teamDate: '',
+  mineTeams: false,
   adminTab: 'review',
   meTab: 'bookings',
   modal: null,
@@ -283,22 +284,32 @@ function viewTeams() {
   const user = Store.currentUser();
   const all = Store.teams();
   const filterDate = ui.teamDate;
-  const list = filterDate ? all.filter((t) => t.date === filterDate) : all;
+  const mineOnly = ui.mineTeams;
+  const mineOf = (t) => t.userId === user.id || t.members.some((m) => m.userId === user.id);
+  let list = mineOnly ? all.filter(mineOf) : all;
+  if (filterDate) list = list.filter((t) => t.date === filterDate);
   const dates = all.map((t) => t.date).filter(Boolean).sort();
   const month = monthBounds();
   const minDate = dates.length && dates[0] < month.min ? dates[0] : month.min;
   const maxDate = dates.length && dates[dates.length - 1] > month.max ? dates[dates.length - 1] : month.max;
+  const hintParts = [];
+  if (mineOnly) hintParts.push('只看我的组队');
+  if (filterDate) hintParts.push('仅 ' + fmtDay(filterDate) + ' 当天');
+  const hintText = hintParts.length ? hintParts.join(' ｜ ') + '，共 ' + list.length + ' 支队伍' : '默认显示全部组队活动，共 ' + all.length + ' 支队伍';
   const filterBar = '<div class="card filter-card"><div class="date-bar" style="margin-top:0;padding-top:0;border-top:none">'
     + '<span class="muted">活动日期</span>'
     + '<input type="date" id="teamDateFilter" data-change="pick-team-date" min="' + minDate + '" max="' + maxDate + '" value="' + esc(filterDate) + '">'
-    + '<button class="btn btn-sm" data-action="clear-team-date"' + (filterDate ? '' : ' disabled') + '>清除筛选</button>'
-    + '<span class="hint">' + (filterDate ? '仅显示 ' + fmtDay(filterDate) + ' 当天的组队活动，共 ' + list.length + ' 支队伍' : '默认显示全部组队活动，共 ' + all.length + ' 支队伍') + '</span>'
+    + '<button class="chip' + (mineOnly ? ' active' : '') + '" data-action="toggle-my-teams">我的组队</button>'
+    + '<button class="btn btn-sm" data-action="clear-team-date"' + (filterDate || mineOnly ? '' : ' disabled') + '>清除筛选</button>'
+    + '<span class="hint">' + hintText + '</span>'
     + '</div></div>';
   let body;
   if (list.length) {
     body = list.map((t) => teamCard(t, user)).join('');
-  } else if (filterDate) {
-    body = '<div class="card card-pad empty">' + fmtDay(filterDate) + ' 当天没有组队活动，换个日期试试'
+  } else if (filterDate || mineOnly) {
+    const emptyText = mineOnly && filterDate ? fmtDay(filterDate) + ' 当天你没有参与任何组队活动'
+      : (mineOnly ? '你还没有发起或加入任何组队，点击右上角创建一支吧' : fmtDay(filterDate) + ' 当天没有组队活动，换个日期试试');
+    body = '<div class="card card-pad empty">' + emptyText
       + '<div class="row" style="justify-content:center;margin-top:12px"><button class="btn btn-sm btn-primary" data-action="clear-team-date">清除筛选</button></div></div>';
   } else {
     body = '<div class="card card-pad empty">暂无组队消息，点击右上角创建第一支队伍吧</div>';
