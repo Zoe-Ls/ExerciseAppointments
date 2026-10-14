@@ -267,7 +267,8 @@ function teamCard(team, user) {
       + '<button class="btn btn-sm" data-action="team-book" data-id="' + team.id + '"' + (joined.length < team.need || team.status === 'booked' ? ' disabled' : '') + '>满员后提交预约</button>';
   } else if (mine) {
     if (mine.status === 'pending') {
-      actions = '<button class="btn btn-sm" disabled>已申请，等待队长同意</button>';
+      actions = '<span class="hint">已申请，等待队长同意</span>'
+        + '<button class="btn btn-sm" data-action="team-leave" data-id="' + team.id + '">退出队伍</button>';
     } else if (team.status === 'booked') {
       actions = '<span class="hint">你已加入该队 · 队伍已提交预约，暂时不能退出</span>';
     } else {
@@ -669,6 +670,9 @@ function modalTeamManage(m) {
       + '<div class="row"><button class="btn btn-sm btn-primary" data-action="team-review" data-id="' + team.id + '" data-user="' + x.userId + '" data-approve="1">同意</button>'
       + '<button class="btn btn-sm" data-action="team-review" data-id="' + team.id + '" data-user="' + x.userId + '" data-approve="0">拒绝</button></div></div>').join('')
       : '<p class="hint">暂无待处理申请</p>')
+    + ((team.events && team.events.length) ? '<p class="section-hint" style="margin-top:14px">最近动态</p>'
+      + team.events.map((ev) => '<div class="row-between" style="margin-bottom:6px"><div class="row">' + avatarHtml(Store.userById(ev.userId), 'avatar-sm')
+        + '<span>' + tf(ev.name) + (ev.kind === 'withdraw' ? ' 撤销了入队申请' : ' 退出了队伍') + '</span></div><span class="hint">' + esc(ev.createdAt) + '</span></div>').join('') : '')
     + '</div>';
   const foot = '<div class="modal-foot"><button class="btn" data-action="close-modal">关闭</button>'
     + '<button class="btn btn-primary" data-action="team-book" data-id="' + team.id + '"' + (joined.length < team.need || team.status === 'booked' ? ' disabled' : '') + '>提交预约</button></div>';

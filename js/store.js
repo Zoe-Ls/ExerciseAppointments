@@ -544,10 +544,22 @@ const Store = (function () {
     if (team.userId === user.id) return { ok: false, message: '你是该队伍的发起人，不能退出自己的队伍' };
     const member = team.members.find((m) => m.userId === user.id);
     if (!member) return { ok: false, message: '你不在该队伍中' };
-    if (member.status !== 'joined') return { ok: false, message: '入队申请尚未通过，暂时不能退出' };
+    if (member.status !== 'joined') {
+      team.members = team.members.filter((m) => m.userId !== user.id);
+      team.events = [{ id: uid('e'), kind: 'withdraw', userId: user.id, name: user.name, createdAt: nowStamp() }]
+        .concat(team.events || []).slice(0, 10);
+      team.newApplications = (team.newApplications || 0) + 1;
+      bumpUnread(team.userId, 'teamApps');
+      save();
+      return { ok: true, message: '已撤销入队申请' };
+    }
     if (team.status === 'booked') return { ok: false, message: '队伍已提交预约，需队长取消预约后才能退出' };
     team.members = team.members.filter((m) => m.userId !== user.id);
     if (team.status === 'full') team.status = 'open';
+    team.events = [{ id: uid('e'), kind: 'leave', userId: user.id, name: user.name, createdAt: nowStamp() }]
+      .concat(team.events || []).slice(0, 10);
+    team.newApplications = (team.newApplications || 0) + 1;
+    bumpUnread(team.userId, 'teamApps');
     save();
     return { ok: true, message: '已退出队伍' };
   }
