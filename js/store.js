@@ -638,6 +638,27 @@ const Store = (function () {
     save();
     return { ok: true, team: team };
   }
+  function disbandTeam(teamId) {
+    const s = load();
+    const team = s.teams.find((t) => t.id === teamId);
+    if (!team) return { ok: false, message: '队伍不存在' };
+    if (isPastSlot(team.date, team.slot)) return { ok: false, message: '该组队活动时间已过，不能再操作' };
+    const user = currentUser();
+    if (!user || user.id !== team.userId) return { ok: false, message: '只有队长可以解散队伍' };
+    if (team.status === 'booked') return { ok: false, message: '队伍已提交预约，需先取消预约才能解散' };
+    team.status = 'disbanded';
+    team.disbandedAt = nowStamp();
+    team.events = [{ id: uid('e'), kind: 'disband', userId: user.id, name: user.name, createdAt: nowStamp() }]
+      .concat(team.events || []).slice(0, 10);
+    s.teams = s.teams.filter((t) => t.id !== teamId);
+    s.teamArchive = (s.teamArchive || []).concat(team);
+    const targets = [team.userId].concat(
+      team.members.filter((m) => m.status === 'joined' && m.userId !== team.userId).map((m) => m.userId)
+    );
+    targets.forEach((id) => bumpUnread(id, 'teams'));
+    save();
+    return { ok: true, message: '已解散该队伍' };
+  }
   function removeTeamMember(teamId, userId) {
     const s = load();
     const team = s.teams.find((t) => t.id === teamId);
@@ -895,7 +916,7 @@ const Store = (function () {
     sendFriendRequest: sendFriendRequest, respondFriendRequest: respondFriendRequest, friendStateWith: friendStateWith,
     removeFriend: removeFriend, blockFriend: blockFriend, unblockUser: unblockUser, hasBlocked: hasBlocked, isBlockedBy: isBlockedBy,
     teams: teams, createTeam: createTeam, applyTeam: applyTeam, reviewTeamMember: reviewTeamMember,
-    leaveTeam: leaveTeam, updateTeamNeed: updateTeamNeed, removeTeamMember: removeTeamMember,
+    leaveTeam: leaveTeam, updateTeamNeed: updateTeamNeed, removeTeamMember: removeTeamMember, disbandTeam: disbandTeam,
     availableVenuesAt: availableVenuesAt, rebookTeam: rebookTeam,
     teamInvitesFor: teamInvitesFor, teamInviteHistory: teamInviteHistory, inviteFriendToTeam: inviteFriendToTeam, respondTeamInvite: respondTeamInvite,
     teamsOfUserInMonth: teamsOfUserInMonth,

@@ -245,6 +245,15 @@ const Actions = {
     toast(r.message || '已处理邀请');
     renderApp();
   },
+  'disband-team': function (el) {
+    if (!window.confirm('确定要解散该队伍吗？解散后队伍将不存在，成员会收到通知。')) return;
+    const r = Store.disbandTeam(el.dataset.id);
+    if (!r.ok) { toast(r.message, 'error'); return; }
+    toast(r.message || '已解散该队伍');
+    closeModal();
+    renderApp();
+  },
+
   'team-remove': function (el) {
     if (!window.confirm('确定要将该队员移出队伍吗？移出后对方会收到通知。')) return;
     const r = Store.removeTeamMember(el.dataset.id, el.dataset.user);

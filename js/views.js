@@ -467,11 +467,13 @@ function viewMe() {
           const joined = t.members.filter((m) => m.status === 'joined');
           const mine = t.members.find((m) => m.userId === user.id);
           const removed = !!(mine && mine.status === 'removed');
+          const disbanded = t.status === 'disbanded';
           const role = removed ? '—' : (t.userId === user.id ? '发起人' : (mine && mine.status === 'joined' ? '已加入' : '待队长同意'));
           const statusText = removed ? badge('您已被移除队伍', 'red')
+            : (disbanded ? badge('队伍已解散', 'gray')
             : (expired ? badge('已过期', 'gray')
             : (t.status === 'booked' ? badge('已提交预约', 'green')
-              : (joined.length >= t.need ? badge('人数已满', 'blue') : badge('招募中 ' + joined.length + '/' + t.need, 'amber'))));
+              : (joined.length >= t.need ? badge('人数已满', 'blue') : badge('招募中 ' + joined.length + '/' + t.need, 'amber')))));
           return '<tr' + (expired ? ' class="is-expired"' : '') + '>'
             + '<td>' + tf(t.title) + '</td>'
             + '<td>' + VENUE_MAP[t.venueTypeId].icon + ' ' + venueLabel(t.venueTypeId, t.venueNo) + '</td>'
@@ -803,9 +805,10 @@ function modalTeamManage(m) {
     + '<span class="hint">当前已加入 ' + joined.length + tu('人', joined.length) + ' ｜ 需 ≥ 该人数，最多 15 人</span></div></div>'
     + ((team.events && team.events.length) ? '<p class="section-hint" style="margin-top:14px">最近动态</p>'
       + team.events.map((ev) => '<div class="row-between" style="margin-bottom:6px"><div class="row">' + avatarHtml(Store.userById(ev.userId), 'avatar-sm')
-        + '<span>' + tf(ev.name) + (ev.kind === 'withdraw' ? ' 撤销了入队申请' : (ev.kind === 'removed' ? ' 被移出队伍' : (ev.kind === 'join' ? ' 接受了邀请加入队伍' : ' 退出了队伍'))) + '</span></div><span class="hint">' + esc(ev.createdAt) + '</span></div>').join('') : '')
+        + '<span>' + tf(ev.name) + (ev.kind === 'withdraw' ? ' 撤销了入队申请' : (ev.kind === 'removed' ? ' 被移出队伍' : (ev.kind === 'join' ? ' 接受了邀请加入队伍' : (ev.kind === 'disband' ? ' 解散了队伍' : ' 退出了队伍')))) + '</span></div><span class="hint">' + esc(ev.createdAt) + '</span></div>').join('') : '')
     + '</div>';
-  const foot = '<div class="modal-foot"><button class="btn" data-action="close-modal">关闭</button>'
+  const foot = '<div class="modal-foot"><button class="btn btn-danger" data-action="disband-team" data-id="' + team.id + '">解散队伍</button>'
+    + '<button class="btn" data-action="close-modal">关闭</button>'
     + '<button class="btn btn-primary" data-action="team-book" data-id="' + team.id + '"' + (joined.length < team.need || team.status === 'booked' ? ' disabled' : '') + '>提交预约</button></div>';
   return modalShell('管理队伍', body + foot);
 }
