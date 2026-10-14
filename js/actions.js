@@ -265,6 +265,7 @@ const Actions = {
   'add-friend': function (el) {
     const r = Store.sendFriendRequest(el.dataset.id);
     toast(r.message || (r.ok ? '好友申请已发送' : '操作失败'), r.ok ? 'ok' : 'error');
+    renderModal();
   },
 
   'friend-respond': function (el) {
@@ -272,6 +273,28 @@ const Actions = {
     if (!r.ok) { toast(r.message, 'error'); return; }
     toast(el.dataset.accept === '1' ? '已同意好友申请' : '已拒绝好友申请');
     renderApp();
+  },
+
+  'open-user-profile': function (el) { ui.modal = { kind: 'user-profile', id: el.dataset.id }; renderModal(); },
+
+  'remove-friend': function (el) {
+    if (!window.confirm('确定要删除该好友吗？删除后可以在交流中心重新添加。')) return;
+    const r = Store.removeFriend(el.dataset.id);
+    toast(r.message || (r.ok ? '已删除好友' : '操作失败'), r.ok ? 'ok' : 'error');
+    if (r.ok) { closeModal(); renderApp(); }
+  },
+
+  'block-friend': function (el) {
+    if (!window.confirm('确定要拉黑该用户吗？拉黑后对方将无法再添加你为好友。')) return;
+    const r = Store.blockFriend(el.dataset.id);
+    toast(r.message || (r.ok ? '已拉黑该用户' : '操作失败'), r.ok ? 'ok' : 'error');
+    if (r.ok) { renderModal(); renderApp(); }
+  },
+
+  'unblock-user': function (el) {
+    const r = Store.unblockUser(el.dataset.id);
+    toast(r.message || (r.ok ? '已解除拉黑' : '操作失败'), r.ok ? 'ok' : 'error');
+    if (r.ok) renderModal();
   },
 
   'report-post': function (el) {

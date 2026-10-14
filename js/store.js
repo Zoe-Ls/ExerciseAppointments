@@ -425,12 +425,80 @@ const Store = (function () {
     return !!ua && (ua.friends || []).indexOf(b) >= 0;
   }
 
+  function friendStateWith(targetId) {
+    const user = currentUser();
+    if (!user) return 'none';
+    if (user.id === targetId) return 'self';
+    if (hasBlocked(targetId)) return 'blocking';
+    if (isBlockedBy(targetId)) return 'blocked';
+    if (isFriend(user.id, targetId)) return 'friend';
+    const s = load();
+    if (s.friendRequests.some((r) => r.fromId === user.id && r.toId === targetId && r.status === 'pending')) return 'sent';
+    if (s.friendRequests.some((r) => r.fromId === targetId && r.toId === user.id && r.status === 'pending')) return 'incoming';
+    return 'none';
+  }
+  function removeFriend(friendId) {
+    const s = load();
+    const user = currentUser();
+    if (!user) return { ok: false, message: '请先登录' };
+    const me = s.users.find((u) => u.id === user.id);
+    const other = s.users.find((u) => u.id === friendId);
+    if (!me || !other) return { ok: false, message: '用户不存在' };
+    me.friends = (me.friends || []).filter((id) => id !== friendId);
+    other.friends = (other.friends || []).filter((id) => id !== me.id);
+    save();
+    return { ok: true, message: '已删除好友' };
+  }
+
+  function blockFriend(friendId) {
+    const s = load();
+    const user = currentUser();
+    if (!user) return { ok: false, message: '请先登录' };
+    if (friendId === user.id) return { ok: false, message: '不能拉黑自己' };
+    const me = s.users.find((u) => u.id === user.id);
+    const other = s.users.find((u) => u.id === friendId);
+    if (!me || !other) return { ok: false, message: '用户不存在' };
+    me.friends = (me.friends || []).filter((id) => id !== friendId);
+    other.friends = (other.friends || []).filter((id) => id !== me.id);
+    me.blocked = (me.blocked || []).filter((id) => id !== friendId).concat(friendId);
+    s.friendRequests = s.friendRequests.filter((r) => !(
+      (r.fromId === me.id && r.toId === friendId) || (r.fromId === friendId && r.toId === me.id)
+    ));
+    save();
+    return { ok: true, message: '已拉黑该用户' };
+  }
+
+  function unblockUser(userId) {
+    const user = currentUser();
+    if (!user) return { ok: false, message: '请先登录' };
+    const target = load().users.find((u) => u.id === user.id);
+    if (!target) return { ok: false, message: '用户不存在' };
+    target.blocked = (target.blocked || []).filter((id) => id !== userId);
+    save();
+    return { ok: true, message: '已解除拉黑' };
+  }
+
+  function hasBlocked(userId) {
+    const user = currentUser();
+    if (!user) return false;
+    const self = load().users.find((u) => u.id === user.id);
+    return !!(self && (self.blocked || []).indexOf(userId) >= 0);
+  }
+
+  function isBlockedBy(userId) {
+    const user = currentUser();
+    if (!user) return false;
+    const other = load().users.find((u) => u.id === userId);
+    return !!(other && (other.blocked || []).indexOf(user.id) >= 0);
+  }
   function sendFriendRequest(targetId) {
     const s = load();
     const user = currentUser();
     if (!canPost(user)) return { ok: false, message: '当前账号无法添加好友' };
     if (targetId === user.id) return { ok: false, message: '不能添加自己为好友' };
     if (isFriend(user.id, targetId)) return { ok: false, message: '你们已经是好友了' };
+    if (hasBlocked(targetId)) return { ok: false, message: '你已拉黑该用户，请先解除拉黑' };
+    if (isBlockedBy(targetId)) return { ok: false, message: '您已被对方拉黑，不能加好友' };
     const pending = s.friendRequests.find((r) => r.fromId === user.id && r.toId === targetId && r.status === 'pending');
     if (pending) return { ok: false, message: '已发送过好友申请，等待对方同意' };
     s.friendRequests.push({ id: uid('f'), fromId: user.id, toId: targetId, status: 'pending', createdAt: nowStamp() });
@@ -450,6 +518,7 @@ const Store = (function () {
       const from = userById(req.fromId);
       if (from && (from.friends || []).indexOf(user.id) < 0) from.friends.push(user.id);
       if ((user.friends || []).indexOf(req.fromId) < 0) user.friends.push(req.fromId);
+      bumpUnread(req.fromId, 'friends');
     }
     save();
     return { ok: true };
@@ -658,7 +727,8 @@ const Store = (function () {
     posts: posts, createPost: createPost, addComment: addComment, toggleLike: toggleLike, toggleFavorite: toggleFavorite,
     report: report, reports: function () { return load().reports.slice(); }, resolveReport: resolveReport,
     friendRequestsFor: friendRequestsFor, sentFriendRequests: sentFriendRequests, isFriend: isFriend,
-    sendFriendRequest: sendFriendRequest, respondFriendRequest: respondFriendRequest,
+    sendFriendRequest: sendFriendRequest, respondFriendRequest: respondFriendRequest, friendStateWith: friendStateWith,
+    removeFriend: removeFriend, blockFriend: blockFriend, unblockUser: unblockUser, hasBlocked: hasBlocked, isBlockedBy: isBlockedBy,
     teams: teams, createTeam: createTeam, applyTeam: applyTeam, reviewTeamMember: reviewTeamMember,
     leaveTeam: leaveTeam,
     teamsOfUserInMonth: teamsOfUserInMonth,

@@ -287,7 +287,7 @@ function teamCard(team, user) {
     + (team.contact ? '<span>联系方式：' + tf(team.contact) + '</span>' : '')
     + '<span class="muted">发布于 ' + esc(team.createdAt) + '</span></div>'
     + (team.note ? '<p class="hint">' + tf(team.note) + '</p>' : '')
-    + '<div class="team-members">' + team.members.map((m) => '<span class="member-pill ' + (m.status === 'pending' ? 'pending' : '') + '">' + tf(m.name) + (m.status === 'pending' ? '（待同意）' : '') + '</span>').join('') + '</div>'
+    + '<div class="team-members">' + team.members.map((m) => userLink(Store.userById(m.userId), '<span class="member-pill ' + (m.status === 'pending' ? 'pending' : '') + '">' + tf(m.name) + (m.status === 'pending' ? '（待同意）' : '') + '</span>')).join('') + '</div>'
     + '<div class="row" style="margin-top:12px">' + actions + '</div></div>';
 }
 
@@ -342,12 +342,12 @@ function postCard(post, user) {
   const isSelf = post.userId === user.id;
   const isFriend = Store.isFriend(user.id, post.userId);
   const canPost = Store.canPost(user);
-  const comments = post.comments.map((c) => '<div class="comment">' + avatarHtml(Store.userById(c.userId), 'avatar-sm')
-    + '<div><span class="who">' + tf(Store.userById(c.userId) ? Store.userById(c.userId).name : '未知') + '</span>：' + tf(c.content)
+  const comments = post.comments.map((c) => '<div class="comment">' + userLink(Store.userById(c.userId), avatarHtml(Store.userById(c.userId), 'avatar-sm'))
+    + '<div>' + userLink(Store.userById(c.userId), '<span class="who">' + tf(Store.userById(c.userId) ? Store.userById(c.userId).name : '未知') + '</span>') + '：' + tf(c.content)
     + '<span class="hint"> ' + esc(c.createdAt) + '</span>'
     + '<button class="link-btn" data-action="report-comment" data-post="' + post.id + '" data-comment="' + c.id + '" data-target="' + c.userId + '">举报</button></div></div>').join('');
-  return '<div class="card post"><div class="post-head">' + avatarHtml(author, 'avatar-sm')
-    + '<div><span class="who">' + tf(author ? author.name : '未知用户') + '</span>'
+  return '<div class="card post"><div class="post-head">' + userLink(author, avatarHtml(author, 'avatar-sm'))
+    + '<div>' + userLink(author, '<span class="who">' + tf(author ? author.name : '未知用户') + '</span>')
     + '<p class="hint">' + tf(author && author.major ? author.major : '') + ' ｜ ' + esc(post.createdAt) + '</p></div>'
     + '<div class="row" style="margin-left:auto">'
     + (!isSelf && !isFriend ? '<button class="link-btn" data-action="add-friend" data-id="' + post.userId + '">＋ 加好友</button>' : '')
@@ -478,14 +478,14 @@ function viewMe() {
     body = '<div class="card card-pad"><strong>好友申请</strong>'
       + (requests.length ? requests.map((r) => {
         const from = Store.userById(r.fromId);
-        return '<div class="row-between" style="margin-top:10px"><div class="row">' + avatarHtml(from, 'avatar-sm') + '<span>' + tf(from ? from.name : '未知') + ' 申请加你为好友</span></div>'
+        return '<div class="row-between" style="margin-top:10px"><div class="row">' + userLink(from, avatarHtml(from, 'avatar-sm')) + '<span>' + tf(from ? from.name : '未知') + ' 申请加你为好友</span></div>'
           + '<div class="row"><span class="hint">' + esc(r.createdAt) + '</span>'
           + '<button class="btn btn-sm btn-primary" data-action="friend-respond" data-id="' + r.id + '" data-accept="1">同意</button>'
           + '<button class="btn btn-sm" data-action="friend-respond" data-id="' + r.id + '" data-accept="0">拒绝</button></div></div>';
       }).join('') : '<p class="hint" style="margin-top:8px">暂无待处理的好友申请</p>')
       + '</div>'
       + '<div class="card card-pad" style="margin-top:14px"><strong>我的好友（' + friends.length + '）</strong>'
-      + (friends.length ? '<div class="row wrap" style="margin-top:10px;gap:14px">' + friends.map((f) => '<div class="row" style="gap:8px">' + avatarHtml(f, 'avatar-sm') + '<div><div>' + tf(f.name) + '</div><span class="hint">' + tf(f.major || '') + '</span></div></div>').join('') + '</div>'
+      + (friends.length ? '<div class="row wrap" style="margin-top:10px;gap:14px">' + friends.map((f) => userLink(f, avatarHtml(f, 'avatar-sm') + '<div><div>' + tf(f.name) + '</div><span class="hint">' + tf(f.major || '') + '</span></div>')).join('') + '</div>'
         : '<p class="hint" style="margin-top:8px">还没有好友，去交流中心加好友吧</p>')
       + '</div>';
   } else if (tab === 'posts') {
@@ -656,6 +656,52 @@ function modalTeamCreate(m) {
   return modalShell('创建队伍', body + foot);
 }
 
+function userLink(user, inner) {
+  if (!user) return inner;
+  return '<button class="link-plain" data-action="open-user-profile" data-id="' + user.id + '">' + inner + '</button>';
+}
+
+function modalUserProfile(m) {
+  const user = Store.userById(m.id);
+  if (!user) return modalShell('用户主页', '<div class="modal-body">该用户不存在</div>');
+  const state = Store.friendStateWith(user.id);
+  const bookings = Store.bookingsOf(user.id).filter((b) => b.status !== 'rejected').length;
+  const posts = Store.posts().filter((p) => p.userId === user.id).length;
+  const friendCount = (user.friends || []).length;
+  const rows = [
+    ['性别', user.gender || '—'],
+    ['年龄', user.age || '—'],
+    ['年级', user.grade || '—'],
+    ['专业', user.major || '—'],
+    ['班级', user.className || '—'],
+    ['爱好', user.hobbies || '—'],
+    ['个人介绍', user.bio || '—'],
+  ];
+  const blockBtn = '<button class="btn btn-danger" data-action="block-friend" data-id="' + user.id + '">拉黑</button>';
+  let action = '';
+  if (state === 'self') action = '<span class="hint">这是你自己的主页</span>';
+  else if (state === 'friend') action = '<span class="hint">你们已经是好友了</span>';
+  else if (state === 'blocking') action = '<button class="btn" data-action="unblock-user" data-id="' + user.id + '">解除拉黑</button>';
+  else if (state === 'blocked') action = '<span class="hint">您已被对方拉黑，不能加好友</span>';
+  else if (state === 'sent') action = '<span class="hint">已发送申请，等待对方同意</span>' + blockBtn;
+  else if (state === 'incoming') action = '<span class="hint">对方已向你发送好友申请，可在「我的好友」中处理</span>' + blockBtn;
+  else action = '<button class="btn btn-primary" data-action="add-friend" data-id="' + user.id + '">＋ 加好友</button>' + blockBtn;
+  const body = '<div class="modal-body">'
+    + '<div class="profile-head">' + avatarHtml(user, 'avatar-lg')
+    + '<div class="grow"><h2 style="font-size:18px">' + tf(user.name) + '</h2>'
+    + '<p class="hint">' + tf(user.major || '') + ' ｜ ' + tf(user.className || '') + '</p>'
+    + '<p class="hint">好友 ' + friendCount + tu('位', friendCount) + ' ｜ 预约 ' + bookings + tu('条', bookings) + ' ｜ 帖子 ' + posts + tu('条', posts) + '</p></div></div>'
+    + '<div class="profile-list" style="margin-top:14px">'
+    + rows.map((r) => '<div class="profile-item"><b>' + r[0] + '</b><span>' + tf(r[1]) + '</span></div>').join('')
+    + '</div></div>';
+  const foot = '<div class="modal-foot"><button class="btn" data-action="close-modal">关闭</button>'
+    + (state === 'friend'
+      ? '<button class="btn btn-danger" data-action="block-friend" data-id="' + user.id + '">拉黑好友</button>'
+        + '<button class="btn btn-danger" data-action="remove-friend" data-id="' + user.id + '">删除好友</button>'
+      : action) + '</div>';
+  return modalShell(tf(user.name) + ' 的个人主页', body + foot);
+}
+
 function modalTeamManage(m) {
   const team = Store.load().teams.find((t) => t.id === m.id);
   if (!team) return modalShell('管理队伍', '<div class="modal-body">队伍不存在</div>');
@@ -720,6 +766,7 @@ function renderModal() {
   else if (m.kind === 'team-manage') root.innerHTML = tr(modalTeamManage(m));
   else if (m.kind === 'report') root.innerHTML = tr(modalReport(m));
   else if (m.kind === 'notice-history') root.innerHTML = tr(modalNoticeHistory());
+  else if (m.kind === 'user-profile') root.innerHTML = tr(modalUserProfile(m));
   else if (m.kind === 'password') root.innerHTML = tr(modalPassword(m));
 }
 

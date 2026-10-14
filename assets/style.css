@@ -414,6 +414,9 @@ table.slot-grid { border-collapse: separate; border-spacing: 0; font-size: 12px;
 }
 .link-btn:hover { background: var(--pine-50); color: var(--pine-700); }
 .link-btn.on { background: var(--lime-500); color: var(--pine-900); font-weight: 700; }
+.link-plain { display: inline-flex; align-items: center; gap: 6px; border: none; background: transparent; padding: 0; font: inherit; color: inherit; cursor: pointer; }
+.link-plain:hover { text-decoration: underline; text-underline-offset: 3px; }
+.link-plain:hover .avatar { text-decoration: none; }
 .comments { margin-top: 12px; border-top: 1px dashed var(--line); padding-top: 12px; display: grid; gap: 10px; }
 .comment { display: flex; gap: 9px; font-size: 13px; align-items: flex-start; }
 .comment .who { font-weight: 700; color: var(--pine-600); }
