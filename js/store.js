@@ -14,7 +14,7 @@ const Store = (function () {
   function blankState() {
     return {
       users: [], bookings: [], posts: [], notices: [], teams: [], reports: [],
-      friendRequests: [], session: { userId: null },
+      friendRequests: [], teamArchive: [], session: { userId: null },
     };
   }
 
@@ -235,13 +235,21 @@ const Store = (function () {
   function purgeExpiredTeams() {
     const s = load();
     const today = todayStr();
-    const kept = s.teams.filter((t) => !(t.date < today));
-    const removed = s.teams.length - kept.length;
-    if (removed) {
-      s.teams = kept;
-      save();
-    }
-    return { removed: removed };
+    const gone = s.teams.filter((t) => t.date < today);
+    if (!gone.length) return { removed: 0 };
+    s.teams = s.teams.filter((t) => !(t.date < today));
+    s.teamArchive = (s.teamArchive || []).concat(gone);
+    save();
+    return { removed: gone.length };
+  }
+
+  function teamsOfUserInMonth(userId) {
+    const s = load();
+    const month = monthBounds().min.slice(0, 7);
+    return s.teams.concat(s.teamArchive || [])
+      .filter((t) => String(t.date).slice(0, 7) === month)
+      .filter((t) => t.userId === userId || t.members.some((m) => m.userId === userId))
+      .sort(compareBySlotTime);
   }
 
   function cancelBooking(id) {
@@ -588,6 +596,7 @@ const Store = (function () {
     sendFriendRequest: sendFriendRequest, respondFriendRequest: respondFriendRequest,
     teams: teams, createTeam: createTeam, applyTeam: applyTeam, reviewTeamMember: reviewTeamMember,
     leaveTeam: leaveTeam,
+    teamsOfUserInMonth: teamsOfUserInMonth,
     confirmTeamBooking: confirmTeamBooking, notices: notices, publishNotice: publishNotice,
     deleteNotice: deleteNotice, stats: stats,
   };

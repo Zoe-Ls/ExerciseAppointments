@@ -393,7 +393,8 @@ function viewMe() {
   const requests = Store.friendRequestsFor(user.id);
   const myPosts = Store.posts().filter((p) => p.userId === user.id);
   const favorites = Store.posts().filter((p) => p.favorites.indexOf(user.id) >= 0);
-  const tabs = [['bookings', '我的预约 ' + bookings.length], ['friends', '我的好友 ' + friends.length], ['posts', '我的帖子 ' + myPosts.length], ['favorites', '我的收藏 ' + favorites.length]];
+  const myTeams = Store.teamsOfUserInMonth(user.id);
+  const tabs = [['bookings', '我的预约 ' + bookings.length], ['teams', '我的组队 ' + myTeams.length], ['friends', '我的好友 ' + friends.length], ['posts', '我的帖子 ' + myPosts.length], ['favorites', '我的收藏 ' + favorites.length]];
   const profile = '<div class="card card-pad">'
     + '<div class="profile-head">'
     + '<div class="avatar-upload">' + avatarHtml(user, 'avatar-lg')
@@ -430,6 +431,25 @@ function viewMe() {
         }).join('')
         + '</tbody></table></div>'
       : '<div class="card card-pad empty">还没有预约记录，去场馆预约看看吧</div>';
+  } else if (tab === 'teams') {
+    body = myTeams.length
+      ? '<div class="card table-scroll"><table class="table"><thead><tr><th>组队标题</th><th>场地</th><th>日期 / 时段</th><th>我的身份</th><th>状态</th></tr></thead><tbody>'
+        + myTeams.map((t) => {
+          const expired = isPastSlot(t.date, t.slot);
+          const joined = t.members.filter((m) => m.status === 'joined');
+          const mine = t.members.find((m) => m.userId === user.id);
+          const role = t.userId === user.id ? '发起人' : (mine && mine.status === 'joined' ? '已加入' : '待队长同意');
+          const statusText = expired ? badge('已过期', 'gray')
+            : (t.status === 'booked' ? badge('已提交预约', 'green')
+              : (joined.length >= t.need ? badge('人数已满', 'blue') : badge('招募中 ' + joined.length + '/' + t.need, 'amber')));
+          return '<tr' + (expired ? ' class="is-expired"' : '') + '>'
+            + '<td>' + esc(t.title) + '</td>'
+            + '<td>' + VENUE_MAP[t.venueTypeId].icon + ' ' + venueLabel(t.venueTypeId, t.venueNo) + '</td>'
+            + '<td>' + dayLabel(t.date) + '<p class="hint">' + slotLabel(t.slot) + '</p></td>'
+            + '<td>' + role + '</td><td>' + statusText + '</td></tr>';
+        }).join('')
+        + '</tbody></table></div>'
+      : '<div class="card card-pad empty">本月还没有组队记录，去组队模块发布或加入一支队伍吧</div>';
   } else if (tab === 'friends') {
     body = '<div class="card card-pad"><strong>好友申请</strong>'
       + (requests.length ? requests.map((r) => {
