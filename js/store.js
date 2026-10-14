@@ -361,7 +361,15 @@ const Store = (function () {
   }
 
   function teams() {
-    return load().teams.slice().sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+    return load().teams.slice().sort((a, b) => {
+      const pa = isPastSlot(a.date, a.slot);
+      const pb = isPastSlot(b.date, b.slot);
+      if (pa !== pb) return pa ? 1 : -1;
+      const ka = a.date + ':' + pad2(Number(a.slot));
+      const kb = b.date + ':' + pad2(Number(b.slot));
+      if (ka === kb) return a.createdAt < b.createdAt ? 1 : -1;
+      return pa ? (ka < kb ? 1 : -1) : (ka < kb ? -1 : 1);
+    });
   }
 
   function createTeam(input) {
@@ -398,6 +406,7 @@ const Store = (function () {
     if (!user) return { ok: false, message: '请先登录' };
     const team = s.teams.find((t) => t.id === teamId);
     if (!team) return { ok: false, message: '队伍不存在' };
+    if (isPastSlot(team.date, team.slot)) return { ok: false, message: '该组队活动时间已过，不能再操作' };
     if (team.userId === user.id) return { ok: false, message: '你是该队伍的发起人' };
     const exist = team.members.find((m) => m.userId === user.id);
     if (exist) return { ok: false, message: exist.status === 'pending' ? '已提交申请，等待队长同意' : '你已在队伍中' };
@@ -417,6 +426,7 @@ const Store = (function () {
     const s = load();
     const team = s.teams.find((t) => t.id === teamId);
     if (!team) return { ok: false, message: '队伍不存在' };
+    if (isPastSlot(team.date, team.slot)) return { ok: false, message: '该组队活动时间已过，不能再操作' };
     const member = team.members.find((m) => m.userId === userId);
     if (!member) return { ok: false, message: '成员不存在' };
     if (approve) {
@@ -439,6 +449,7 @@ const Store = (function () {
     if (!user) return { ok: false, message: '请先登录' };
     const team = s.teams.find((t) => t.id === teamId);
     if (!team) return { ok: false, message: '队伍不存在' };
+    if (isPastSlot(team.date, team.slot)) return { ok: false, message: '该组队活动时间已过，不能再操作' };
     if (team.userId === user.id) return { ok: false, message: '你是该队伍的发起人，不能退出自己的队伍' };
     const member = team.members.find((m) => m.userId === user.id);
     if (!member) return { ok: false, message: '你不在该队伍中' };
@@ -454,6 +465,7 @@ const Store = (function () {
     const s = load();
     const team = s.teams.find((t) => t.id === teamId);
     if (!team) return { ok: false, message: '队伍不存在' };
+    if (isPastSlot(team.date, team.slot)) return { ok: false, message: '该组队活动时间已过，不能再操作' };
     const joined = team.members.filter((m) => m.status === 'joined');
     if (joined.length < team.need) {
       return { ok: false, message: '队伍人数未满（' + joined.length + '/' + team.need + '），暂不能预约场地' };

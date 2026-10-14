@@ -244,10 +244,14 @@ function teamCard(team, user) {
   const pending = team.members.filter((m) => m.status === 'pending');
   const isOwner = team.userId === user.id;
   const mine = team.members.find((m) => m.userId === user.id);
-  const statusText = team.status === 'booked' ? badge('已提交预约', 'green')
-    : (joined.length >= team.need ? badge('人数已满', 'blue') : badge('招募中 ' + joined.length + '/' + team.need, 'amber'));
+  const expired = isPastSlot(team.date, team.slot);
+  const statusText = expired ? badge('已过期', 'gray')
+    : (team.status === 'booked' ? badge('已提交预约', 'green')
+      : (joined.length >= team.need ? badge('人数已满', 'blue') : badge('招募中 ' + joined.length + '/' + team.need, 'amber')));
   let actions = '';
-  if (isOwner) {
+  if (expired) {
+    actions = '<span class="hint">活动时间已过，不能再申请、管理或退出</span>';
+  } else if (isOwner) {
     actions = '<button class="btn btn-sm btn-primary" data-action="open-team-manage" data-id="' + team.id + '">管理队伍' + (pending.length ? '（' + pending.length + ' 条申请）' : '') + '</button>'
       + '<button class="btn btn-sm" data-action="team-book" data-id="' + team.id + '"' + (joined.length < team.need || team.status === 'booked' ? ' disabled' : '') + '>满员后提交预约</button>';
   } else if (mine) {
@@ -262,7 +266,7 @@ function teamCard(team, user) {
   } else {
     actions = '<button class="btn btn-sm btn-primary" data-action="team-apply" data-id="' + team.id + '">申请加入</button>';
   }
-  return '<div class="card team-card"><div class="row-between">'
+  return '<div class="card team-card' + (expired ? ' is-expired' : '') + '"><div class="row-between">'
     + '<div><strong>' + esc(team.title) + '</strong><p class="hint">' + type.icon + ' ' + venueLabel(team.venueTypeId, team.venueNo) + ' ｜ ' + dayLabel(team.date) + ' ｜ ' + slotLabel(team.slot) + '</p></div>'
     + statusText + '</div>'
     + '<div class="team-meta"><span>发起人：' + esc(Store.userById(team.userId) ? Store.userById(team.userId).name : '未知') + '</span>'
