@@ -887,6 +887,7 @@ const Store = (function () {
     slotStatus: slotStatus, createBooking: createBooking, bookingsOf: bookingsOf,
     purgeExpiredBookings: purgeExpiredBookings, purgeExpiredTeams: purgeExpiredTeams,
     cancelBooking: cancelBooking, pendingBookings: pendingBookings, reviewBooking: reviewBooking,
+    compareBySlotTime: compareBySlotTime,
     markUnreadRead: markUnreadRead, markNavRead: markNavRead, unreadCount: unreadCount, markTeamApplicationsSeen: markTeamApplicationsSeen,
     posts: posts, createPost: createPost, addComment: addComment, toggleLike: toggleLike, toggleFavorite: toggleFavorite,
     report: report, reports: function () { return load().reports.slice(); }, resolveReport: resolveReport,

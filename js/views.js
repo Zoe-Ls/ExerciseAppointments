@@ -415,7 +415,7 @@ function meTabDot(user, tabId) {
 function viewMe() {
   const user = Store.currentUser();
   const tab = ui.meTab;
-  const bookings = Store.bookingsOf(user.id).slice().sort((a, b) => (a.date + a.slot < b.date + b.slot ? 1 : -1));
+  const bookings = Store.bookingsOf(user.id).slice().sort(Store.compareBySlotTime);
   const friends = (user.friends || []).map((id) => Store.userById(id)).filter(Boolean);
   const requests = Store.friendRequestsFor(user.id);
   const myPosts = Store.posts().filter((p) => p.userId === user.id);
