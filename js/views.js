@@ -457,13 +457,17 @@ function viewAdmin() {
     const handled = Store.load().bookings.filter((b) => b.status !== 'pending').sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)).slice(0, 8);
     body = '<div class="card card-pad" style="margin-bottom:14px"><strong>待审核预约（' + pending.length + '）</strong>'
       + (pending.length ? '<div class="table-scroll"><table class="table"><thead><tr><th>申请人</th><th>场地</th><th>日期 / 时段</th><th>预约理由</th><th>同行成员</th><th>操作</th></tr></thead><tbody>'
-        + pending.map((b) => '<tr><td>' + userChipById(b.userId) + '</td>'
+        + pending.map((b) => {
+          const expired = isPastSlot(b.date, b.slot);
+          return '<tr' + (expired ? ' class="is-expired"' : '') + '><td>' + userChipById(b.userId) + '</td>'
           + '<td>' + VENUE_MAP[b.venueTypeId].icon + ' ' + venueLabel(b.venueTypeId, b.venueNo) + '</td>'
           + '<td>' + dayLabel(b.date) + '<p class="hint">' + slotLabel(b.slot) + '</p></td>'
           + '<td>' + esc(b.reason || '—') + '</td>'
           + '<td class="hint">' + esc(b.members && b.members.length ? b.members.join('、') : '—') + '</td>'
-          + '<td><div class="row"><button class="btn btn-sm btn-primary" data-action="review-booking" data-id="' + b.id + '" data-status="approved">通过</button>'
-          + '<button class="btn btn-sm btn-danger" data-action="review-booking" data-id="' + b.id + '" data-status="rejected">拒绝</button></div></td></tr>').join('')
+          + '<td>' + (expired ? '<span class="hint">已过期</span>'
+            : '<div class="row"><button class="btn btn-sm btn-primary" data-action="review-booking" data-id="' + b.id + '" data-status="approved">通过</button>'
+              + '<button class="btn btn-sm btn-danger" data-action="review-booking" data-id="' + b.id + '" data-status="rejected">拒绝</button></div>') + '</td></tr>';
+        }).join('')
         + '</tbody></table></div>' : '<p class="hint" style="margin-top:8px">暂无待审核预约 🎉</p>')
       + '</div>'
       + '<div class="card card-pad"><strong>最近处理记录</strong>'

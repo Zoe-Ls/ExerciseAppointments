@@ -163,6 +163,16 @@ const Store = (function () {
     return venueText(booking.venueTypeId, booking.venueNo) + (slot ? ' ' + slot.label : '');
   }
 
+  function compareBySlotTime(a, b) {
+    const pa = isPastSlot(a.date, a.slot);
+    const pb = isPastSlot(b.date, b.slot);
+    if (pa !== pb) return pa ? 1 : -1;
+    const ka = a.date + ':' + pad2(Number(a.slot));
+    const kb = b.date + ':' + pad2(Number(b.slot));
+    if (ka === kb) return (a.createdAt || '') < (b.createdAt || '') ? 1 : -1;
+    return pa ? (ka < kb ? 1 : -1) : (ka < kb ? -1 : 1);
+  }
+
   function slotStatus(venueTypeId, venueNo, date, slot) {
     const s = load();
     const found = findActiveBooking(s, venueTypeId, venueNo, date, slot);
@@ -218,12 +228,13 @@ const Store = (function () {
   }
 
   function pendingBookings() {
-    return load().bookings.filter((b) => b.status === 'pending');
+    return load().bookings.filter((b) => b.status === 'pending').sort(compareBySlotTime);
   }
 
   function reviewBooking(id, status) {
     const booking = load().bookings.find((b) => b.id === id);
     if (!booking) return { ok: false, message: '预约不存在' };
+    if (isPastSlot(booking.date, booking.slot)) return { ok: false, message: '该预约的活动时间已过，不能再审核' };
     booking.status = status;
     booking.reviewedAt = nowStamp();
     save();
@@ -361,15 +372,7 @@ const Store = (function () {
   }
 
   function teams() {
-    return load().teams.slice().sort((a, b) => {
-      const pa = isPastSlot(a.date, a.slot);
-      const pb = isPastSlot(b.date, b.slot);
-      if (pa !== pb) return pa ? 1 : -1;
-      const ka = a.date + ':' + pad2(Number(a.slot));
-      const kb = b.date + ':' + pad2(Number(b.slot));
-      if (ka === kb) return a.createdAt < b.createdAt ? 1 : -1;
-      return pa ? (ka < kb ? 1 : -1) : (ka < kb ? -1 : 1);
-    });
+    return load().teams.slice().sort(compareBySlotTime);
   }
 
   function createTeam(input) {
