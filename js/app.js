@@ -25,6 +25,7 @@ function renderApp() {
   if (!app) return;
   try {
     Store.purgeExpiredBookings();
+    Store.purgeExpiredTeams();
     const user = Store.currentUser();
     const path = parseRoute();
     if (!user) {
