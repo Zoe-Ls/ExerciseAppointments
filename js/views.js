@@ -53,21 +53,11 @@ function avatarHtml(user, size) {
 }
 
 function logoMark() {
-  return '<span class="logo-mark"><svg viewBox="0 0 64 64" role="img" aria-label="华中农业大学校徽">'
-    + '<defs><linearGradient id="hzauMarkGrad" x1="0" y1="0" x2="1" y2="1">'
-    + '<stop offset="0%" stop-color="#d6f280"/><stop offset="100%" stop-color="#a8dc3c"/>'
-    + '</linearGradient></defs>'
-    + '<circle cx="32" cy="32" r="31" fill="url(#hzauMarkGrad)"/>'
-    + '<circle cx="32" cy="32" r="25.5" fill="none" stroke="#0c2a21" stroke-opacity="0.22" stroke-width="1.4"/>'
-    + '<path d="M32 47V27" stroke="#0c2a21" stroke-width="2.6" stroke-linecap="round"/>'
-    + '<path d="M32 29c0-6.4 4.6-11.3 11.4-12.1C44 23.6 39.3 29 32 29z" fill="#0c2a21"/>'
-    + '<path d="M32 35c0-5.6-3.9-9.6-9.8-10.3C21.3 30.9 25.4 35 32 35z" fill="#0c2a21" fill-opacity="0.6"/>'
-    + '</svg></span>';
+  return '<span class="logo-mark"><img src="assets/logo.png" alt="华中农业大学校徽"></span>';
 }
 
 function brandLockup() {
   return '<a class="brand" href="#/book">'
-    + '<img class="logo-img" src="assets/logo.png" alt="华中农业大学校徽" onerror="this.remove()" onload="var n=this.nextElementSibling; if(n&&n.className&&n.className.indexOf(\'logo-mark\')>=0){n.remove();}">'
     + logoMark()
     + '<span><strong>' + HZAU.name + '</strong><small>' + HZAU.system + ' · ' + HZAU.version + '</small></span>'
     + '</a>';
