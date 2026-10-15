@@ -1,4 +1,5 @@
-const STORAGE_KEY = 'hzau-sports-proto-v1';
+const STORAGE_KEY = 'hzau-sports-v2';
+const LEGACY_STORAGE_KEYS = ['hzau-sports-proto-v1'];
 
 const Store = (function () {
   let data = null;
@@ -23,16 +24,15 @@ const Store = (function () {
   function buildSeed() {
     const s = blankState();
     s.users = clone(SEED_USERS);
-    s.bookings = seedBookings();
-    s.posts = clone(SEED_POSTS);
     s.notices = clone(SEED_NOTICES);
-    s.teams = seedTeams();
-    s.reports = seedReports();
     return s;
   }
 
   function load() {
     if (data) return data;
+    LEGACY_STORAGE_KEYS.forEach(function (key) {
+      try { window.localStorage.removeItem(key); } catch (err) { }
+    });
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       data = raw ? JSON.parse(raw) : buildSeed();

@@ -42,16 +42,6 @@ const Actions = {
     renderModal();
   },
 
-  'fill-demo': function (el) {
-    ui.loginTab = el.dataset.tab;
-    renderApp();
-    const isAdmin = el.dataset.tab === 'admin';
-    const a = document.getElementById(isAdmin ? 'login-admin-account' : 'login-student-id');
-    const b = document.getElementById(isAdmin ? 'login-admin-pwd' : 'login-student-pwd');
-    if (a) a.value = el.dataset.account;
-    if (b) b.value = el.dataset.password;
-  },
-
   'login-student': function () {
     const r = Store.loginStudent(val('login-student-id'), val('login-student-pwd'));
     if (!r.ok) { setError('login-error', r.message); return; }
@@ -469,13 +459,14 @@ const Actions = {
     closeModal();
   },
 
-  'reset-demo': function () {
-    if (!window.confirm('确定要重置演示数据吗？所有演示账号的预约、帖子、组队信息将恢复初始状态。')) return;
+  'reset-local': function () {
+    if (!window.confirm('将清除本机浏览器中保存的数据并退出登录，确定继续吗？')) return;
     Store.reset();
     ui.modal = null;
-    toast('演示数据已重置');
+    toast('本地数据已清除');
     go('login');
   },
+
 };
 
 function handleChange(el, event) {

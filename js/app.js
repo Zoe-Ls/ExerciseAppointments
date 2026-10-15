@@ -62,8 +62,8 @@ function renderApp() {
   } catch (err) {
     app.innerHTML = '<div class="page"><div class="card card-pad"><h3>页面渲染出错</h3>'
       + '<p class="hint">' + esc(err && err.message ? err.message : String(err)) + '</p>'
-      + '<p class="hint">可尝试点击下方按钮重置演示数据后重新登录。</p>'
-      + '<button class="btn btn-primary" style="margin-top:12px" data-action="reset-demo">重置演示数据</button></div></div>';
+      + '<p class="hint">可尝试清除本机浏览器中保存的数据后重新登录。</p>'
+      + '<button class="btn btn-primary" style="margin-top:12px" data-action="reset-local">清除本地数据</button></div></div>';
   }
 }
 

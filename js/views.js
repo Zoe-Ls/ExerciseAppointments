@@ -59,7 +59,7 @@ function logoMark() {
 function brandLockup() {
   return '<a class="brand" href="#/book">'
     + logoMark()
-    + '<span><strong>' + HZAU.name + '</strong><small>' + HZAU.system + ' · ' + HZAU.version + '</small></span>'
+    + '<span><strong>' + HZAU.name + '</strong><small>' + HZAU.system + '</small></span>'
     + '</a>';
 }
 
@@ -109,17 +109,12 @@ function shell(user, activePath, content) {
     + '<button class="btn btn-sm" data-action="logout">退出</button></div>'
     + '</div></header>'
     + '<main class="page">' + banners + content
-    + '<p class="foot-note">' + HZAU.name + ' · ' + HZAU.system + '（' + HZAU.version + '）｜ ' + HZAU.motto + '</p></main>';
+    + '<p class="foot-note">' + HZAU.name + ' · ' + HZAU.system + '｜ ' + HZAU.motto + '</p></main>';
 }
 
 function viewLogin() {
   const tab = ui.loginTab;
   const tabs = [['student', '学生登录'], ['register', '注册账号'], ['admin', '管理员登录']];
-  const demo = [
-    { label: '学生 · 张伟（20213001）', account: '20213001', password: '123456', tab: 'student' },
-    { label: '学生 · 李娜（20213002）', account: '20213002', password: '123456', tab: 'student' },
-    { label: '管理员 admin（初始密码）', account: 'admin', password: 'admin123', tab: 'admin' },
-  ];
   let form = '';
   if (tab === 'student') {
     form = '<div class="field"><label>学号</label><input id="login-student-id" placeholder="请输入学号，例如 20213001" autocomplete="off"></div>'
@@ -150,10 +145,6 @@ function viewLogin() {
     + '<div class="row" style="justify-content:flex-end;margin-bottom:10px"><button class="btn btn-sm" data-action="switch-lang" data-lang="' + (LANG === 'en' ? 'zh' : 'en') + '">' + (LANG === 'en' ? '中文' : 'EN') + '</button></div>'
     + '<div class="tabs">' + tabs.map((t) => '<button class="' + (tab === t[0] ? 'active' : '') + '" data-action="switch-login-tab" data-tab="' + t[0] + '">' + t[1] + '</button>').join('') + '</div>'
     + form
-    + '<div class="demo-box"><h4>演示账号（点击自动填入）</h4>'
-    + demo.map((d) => '<div class="demo-item"><span>' + esc(d.label) + '</span><button class="btn btn-sm btn-ghost" data-action="fill-demo" data-tab="' + d.tab + '" data-account="' + d.account + '" data-password="' + d.password + '">填入</button></div>').join('')
-    + '</div>'
-    + '<p class="prototype-note">原型版本 ' + HZAU.version + '：数据保存在浏览器本地，可在页面底部重置。</p>'
     + '</div></section></div>';
 }
 function cellHtml(type, venue, slot) {
@@ -198,7 +189,6 @@ function viewBook() {
     + TIME_SLOTS.map((s) => cellHtml(type, v, s)).join('') + '</tr>').join('');
   const content = '<div class="page-head">'
     + '<div><h1 class="page-title">场馆预约</h1><p class="sub">选择场馆类型与日期，绿色图标表示该时段可以预约</p></div>'
-    + '<div class="row"><button class="btn btn-sm" data-action="reset-demo">重置演示数据</button></div>'
     + '</div>'
     + '<div class="card filter-card"><div class="chip-groups">' + chips + '</div>'
     + '<div class="date-bar">'
@@ -604,7 +594,7 @@ function viewAdmin() {
       + '</ul></div>';
   }
   const content = '<div class="page-head"><div><h1 class="page-title">管理后台</h1><p class="sub">审核预约、处理举报、发布通知</p></div>'
-    + '<button class="btn btn-sm" data-action="reset-demo">重置演示数据</button></div>'
+    + '</div>'
     + '<div class="tabs-line">' + tabs.map((t) => '<button class="' + (tab === t[0] ? 'active' : '') + '" data-action="pick-admin-tab" data-tab="' + t[0] + '">' + t[1] + '</button>').join('') + '</div>'
     + body;
   return shell(user, 'admin', content);
