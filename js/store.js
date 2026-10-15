@@ -387,6 +387,18 @@ const Store = (function () {
     return { ok: true, saved: i < 0 };
   }
 
+  function deletePost(postId) {
+    const s = load();
+    const user = currentUser();
+    if (!user) return { ok: false, message: '请先登录' };
+    const post = s.posts.find((p) => p.id === postId);
+    if (!post) return { ok: false, message: '帖子不存在' };
+    if (post.userId !== user.id) return { ok: false, message: '只能删除自己发布的帖子' };
+    s.posts = s.posts.filter((p) => p.id !== postId);
+    save();
+    return { ok: true, message: '已删除该帖子' };
+  }
+
   function report(input) {
     const s = load();
     const user = currentUser();
@@ -910,7 +922,7 @@ const Store = (function () {
     cancelBooking: cancelBooking, pendingBookings: pendingBookings, reviewBooking: reviewBooking,
     compareBySlotTime: compareBySlotTime,
     markUnreadRead: markUnreadRead, markNavRead: markNavRead, unreadCount: unreadCount, markTeamApplicationsSeen: markTeamApplicationsSeen,
-    posts: posts, createPost: createPost, addComment: addComment, toggleLike: toggleLike, toggleFavorite: toggleFavorite,
+    posts: posts, createPost: createPost, addComment: addComment, toggleLike: toggleLike, toggleFavorite: toggleFavorite, deletePost: deletePost,
     report: report, reports: function () { return load().reports.slice(); }, resolveReport: resolveReport,
     friendRequestsFor: friendRequestsFor, sentFriendRequests: sentFriendRequests, isFriend: isFriend,
     sendFriendRequest: sendFriendRequest, respondFriendRequest: respondFriendRequest, friendStateWith: friendStateWith,

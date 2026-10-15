@@ -335,6 +335,7 @@ function postCard(post, user) {
     + '<p class="hint">' + tf(author && author.major ? author.major : '') + ' ｜ ' + esc(post.createdAt) + '</p></div>'
     + '<div class="row" style="margin-left:auto">'
     + (!isSelf && !isFriend ? '<button class="link-btn" data-action="add-friend" data-id="' + post.userId + '">＋ 加好友</button>' : '')
+    + (isSelf ? '<button class="link-btn" data-action="delete-post" data-id="' + post.id + '">删除</button>' : '')
     + '<button class="link-btn" data-action="report-post" data-post="' + post.id + '" data-target="' + post.userId + '">举报</button>'
     + '</div></div>'
     + '<p class="post-content">' + tf(post.content) + '</p>'

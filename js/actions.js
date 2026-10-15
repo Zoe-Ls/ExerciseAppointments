@@ -344,6 +344,14 @@ const Actions = {
     if (r.ok) { toast(r.saved ? '已收藏' : '已取消收藏'); renderApp(); }
   },
 
+  'delete-post': function (el) {
+    if (!window.confirm('确定要删除这条帖子吗？删除后帖子及其评论都会消失，无法恢复。')) return;
+    const r = Store.deletePost(el.dataset.id);
+    if (!r.ok) { toast(r.message, 'error'); return; }
+    toast(r.message || '已删除该帖子');
+    renderApp();
+  },
+
   'add-friend': function (el) {
     const r = Store.sendFriendRequest(el.dataset.id);
     toast(r.message || (r.ok ? '好友申请已发送' : '操作失败'), r.ok ? 'ok' : 'error');
