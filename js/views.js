@@ -141,18 +141,10 @@ function viewLogin() {
       + '<button class="btn btn-primary btn-block" data-action="login-admin">进入管理后台</button>'
       + '<p class="hint" style="margin-top:10px">超级管理员账号由系统初始化脚本自动创建，首次登录需修改密码。</p>';
   }
-  const heroList = [
-    '20 片羽毛球馆（东体育馆 3楼）｜ 36 张乒乓球台（东体育馆 1楼）',
-    '排球：老场 8 片（第二运动场）· 新场 6 片（第三运动场）· 室内 1 片（西体育馆）',
-    '室内网球馆 3 片（东体育馆 2楼）· 室外网球场 4 片',
-    '游泳馆（东体育馆）男女各 1 个',
-    '开放时间 08:00 - 22:00，每小时一个时段，仅可预约本月日期',
-  ];
   return '<div class="auth"><section class="auth-hero">'
     + '<div class="hero-top">' + logoMark() + '<div><strong>' + HZAU.name + '</strong><span>' + HZAU.system + '</span></div></div>'
-    + '<h1>校园场馆<br><em>一键预约</em></h1>'
+    + '<h1>校园场馆 <em>一键预约</em></h1>'
     + '<p class="hero-sub">羽毛球 · 排球 · 乒乓球 · 网球 · 游泳</p>'
-    + '<ul class="hero-list">' + heroList.map((t) => '<li>' + esc(t) + '</li>').join('') + '</ul>'
     + '<p class="hero-motto">' + HZAU.motto + '</p>'
     + '</section><section class="auth-panel"><div class="auth-card">'
     + '<div class="row" style="justify-content:flex-end;margin-bottom:10px"><button class="btn btn-sm" data-action="switch-lang" data-lang="' + (LANG === 'en' ? 'zh' : 'en') + '">' + (LANG === 'en' ? '中文' : 'EN') + '</button></div>'

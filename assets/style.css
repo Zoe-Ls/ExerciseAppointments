@@ -149,6 +149,7 @@ b, strong { font-weight: 700; }
 /* ---------- 6. 校徽与头像 ---------- */
 .logo-mark { width: 42px; height: 42px; display: inline-block; flex: none; }
 .logo-mark img { width: 100%; height: 100%; display: block; }
+.auth-hero .logo-mark { width: 54px; height: 54px; }
 
 .avatar {
   width: 36px; height: 36px; border-radius: 12px; flex: none; display: inline-flex;
@@ -174,35 +175,41 @@ b, strong { font-weight: 700; }
   position: relative; color: var(--pine-800); padding: 52px 54px; overflow: hidden;
   display: flex; flex-direction: column; justify-content: center;
 }
+.auth-hero::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(96deg, rgba(249, 250, 245, .38) 0%, rgba(249, 250, 245, .28) 38%,
+    rgba(249, 250, 245, .10) 64%, rgba(249, 250, 245, 0) 86%);
+}
 .auth-hero::after {
   content: none;
 }
 .auth-hero h1, .auth-hero .hero-top strong, .auth-hero .hero-sub, .auth-hero .hero-list li, .auth-hero .hero-motto {
-  text-shadow: none;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, .8), 0 0 10px rgba(255, 255, 255, .55);
 }
 .hero-top { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
-.hero-top strong { display: block; font-size: 17px; letter-spacing: .04em; color: var(--pine-800); }
-.hero-top span { font-size: 12px; color: rgba(18, 38, 31, .58); }
+.hero-top strong { display: block; font-size: 21px; letter-spacing: .04em; color: var(--pine-800); }
+.hero-top span { font-size: 14px; color: rgba(18, 38, 31, .82); }
 .auth-hero h1 {
-  font-size: 42px; font-weight: 800; line-height: 1.22; letter-spacing: .02em;
+  font-size: 46px; font-weight: 800; line-height: 1.22; letter-spacing: .02em;
   margin: 44px 0 14px; position: relative; z-index: 1; color: var(--pine-800);
 }
-.auth-hero h1 em { font-style: normal; color: #5d9c10; }
-.hero-sub { font-size: 13px; letter-spacing: .06em; color: rgba(18, 38, 31, .66); position: relative; z-index: 1; }
+.auth-hero h1 em { font-style: normal; color: #3f7a10; }
+.hero-sub { font-size: 15px; letter-spacing: .06em; color: rgba(18, 38, 31, .94); position: relative; z-index: 1; }
 .hero-list { margin-top: 30px; display: grid; gap: 9px; position: relative; z-index: 1; }
 .hero-list li {
   position: relative; padding: 9px 14px 9px 32px; font-size: 13px; color: var(--pine-800);
-  background: rgba(255, 255, 255, .66); border: 1px solid rgba(18, 38, 31, .10); border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, .78); border: 1px solid rgba(18, 38, 31, .12); border-radius: var(--radius-sm);
 }
 .hero-list li::before {
   content: ""; position: absolute; left: 14px; top: 50%; margin-top: -4px;
   width: 8px; height: 8px; border-radius: 2px; background: #7cb518;
 }
-.hero-motto { margin-top: 34px; font-size: 12px; letter-spacing: .3em; color: rgba(18, 38, 31, .42); position: relative; z-index: 1; }
+.hero-motto { margin-top: 34px; font-size: 14px; letter-spacing: .3em; color: rgba(18, 38, 31, .80); position: relative; z-index: 1; }
 
 .auth-panel {
   display: flex; align-items: center; justify-content: center; padding: 40px 36px;
   background: #fff; border-radius: 24px; box-shadow: var(--shadow-pop); position: relative; z-index: 2;
+  border: 1px solid rgba(18, 38, 31, .07);
 }
 .auth-card { width: 100%; max-width: 404px; }
 .tabs { display: flex; gap: 4px; background: var(--pine-50); border: 1px solid var(--line-soft); padding: 4px; border-radius: 999px; margin-bottom: 24px; }
@@ -494,7 +501,7 @@ table.slot-grid { border-collapse: separate; border-spacing: 0; font-size: 12px;
 @media (max-width: 900px) {
   .auth { grid-template-columns: 1fr; padding: 18px; background-position: 14% center; }
   .auth-hero { padding: 30px 26px 34px; justify-content: flex-start; }
-  .auth-hero h1 { font-size: 30px; margin: 22px 0 8px; }
+  .auth-hero h1 { font-size: 34px; margin: 22px 0 8px; }
   .hero-list, .hero-motto { display: none; }
   .auth-panel { padding: 30px 22px; border-radius: 22px; }
   .user-chip .name { display: none; }
